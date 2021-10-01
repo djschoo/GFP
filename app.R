@@ -1,34 +1,36 @@
 library(shiny)
+options(scipen = 999)
 
-# Define UI for application that draws a histogram
+# Define UI
 ui <- fluidPage(
-
-    # Application title
-    titlePanel("Simple Calculator"),
-
-    # Sidebar with a slider input for number of bins 
+    
+    # App title
+    titlePanel("Egg Calculator"),
+    
+    # Sidebar layout with input and output definitions
     sidebarLayout(
+        
+        # Sidebar to demonstrate various slider options
         sidebarPanel(
-            numericInput(inputId = "x", label = "Type in a value", value = 0),
-            numericInput(inputId = "y", label = "Type in a value", value = 0),
-            numericInput(inputId = "z", label = "Type in a value", value = 0)
+            h2("Basic stats about your farm"),
+            selectInput("country", "What country are you from?", choices = c("X", "Y"), selected = ""),
+            numericInput("flock_size", "What is the initial flock size?", value = 10000),
+            h2("Costs")
         ),
-
-        # Show a plot of the generated distribution
+        
+        # Main panel for displaying outputs
         mainPanel(
-           h3(textOutput("sum"))
+            
+            textOutput("flock")
         )
     )
 )
 
-# Define server logic required to draw a histogram
+# Define server logic
 server <- function(input, output) {
-
-    output$sum <- renderText({
-        s = input$x + input$y + input$z
-        paste("The sum of the three numbers is ", s)
-    })
+    
+    output$flock = renderText(input$flock_size)
 }
 
-# Run the application 
+# Run the application
 shinyApp(ui = ui, server = server)
