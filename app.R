@@ -3,6 +3,7 @@
 library(shiny)
 library(tidyverse)
 library(readxl)
+library(reactable)
 options(scipen = 999)
 
 defaults_all = read_xlsx("data/country_defaults.xlsx")
@@ -34,7 +35,7 @@ ui <- fluidPage(
         
         # Main panel for displaying outputs
         mainPanel(
-            textOutput("flock_size")
+            reactableOutput("fc")
         )
     )
 )
@@ -43,14 +44,17 @@ ui <- fluidPage(
 server <- function(input, output, session) {
     
     defaults = reactive(defaults_all %>% filter(country == input$country))
-    fc = tibble()
+    fc = reactive({
+        tibble(
+            year = 0:input$num_years,
+            `flock size` = input$flock_size + (input$growth - input$mortality) * year
+    )})
     
     observeEvent(input$country, {
         updateNumericInput(session, inputId = "flock_size", value = NA)
         updateNumericInput(session, inputId = "mortality", value = NA)
         updateNumericInput(session, inputId = "growth", value = NA)
     })
-    
     
     observeEvent(input$go, {
         updateNumericInput(session, inputId = "flock_size", value = filter(defaults(), variable=="flock_size") %>% pull(value))
@@ -60,6 +64,7 @@ server <- function(input, output, session) {
     })
     
     output$flock_size = renderText(input$flock_size)
+    output$fc = renderReactable(reactable(fc()))
 
 }
 
