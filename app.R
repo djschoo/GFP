@@ -27,17 +27,21 @@ ui <- fluidPage(
             actionButton("go", "Generate defaults!"),
             br(),
             br(),
+            
             h3("Basic stats"),
             numericInput("num_years", "How many years would you like to forecast?", value = 10, min=1, max=50, step=1),
             numericInput("flock_size", "What is the initial flock size?", value = NULL, min=0, step=1000),
             numericInputIcon("mortality", "What is the mortality rate of your flock?", value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))),
             numericInputIcon("growth", "What is the expected growth rate of your flock?", value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))),
-            h4("Costs")
+            numericInputIcon("perc_laying", "What percentage of your flock lays eggs?", value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))),
+            
+            
+            h3("Costs")
         ),
         
         # Main panel for displaying outputs
         mainPanel(
-            plotOutput("g"),
+            plotlyOutput("g"),
             reactableOutput("fc")
         )
     )
@@ -50,26 +54,22 @@ server <- function(input, output, session) {
     fc = reactive({
         tibble(
             year = 1:input$num_years,
-            `flock size` = as.integer(input$flock_size * (1 + input$growth/100 - input$mortality/100) ^ year)
+            flock_size = as.integer(input$flock_size * (1 + input$growth/100 - input$mortality/100) ^ year)
     )})
     
-    observeEvent(input$country, {
-        updateNumericInput(session, inputId = "flock_size", value = NA)
-        updateNumericInput(session, inputId = "mortality", value = NA)
-        updateNumericInput(session, inputId = "growth", value = NA)
-    })
-    
-    observeEvent(input$go, {
-        updateNumericInput(session, inputId = "flock_size", value = filter(defaults(), variable=="flock_size") %>% pull(value))
-        updateNumericInput(session, inputId = "mortality", value = filter(defaults(), variable=="flock_mortality") %>% pull(value))
-        updateNumericInput(session, inputId = "growth", value = filter(defaults(), variable=="flock_growth") %>% pull(value))
-        
-    })
-    
+    observeEvent(input$country, {for (var in c("flock_size", "mortality", "growth", "perc_laying")) updateNumericInput(session, inputId = var, value = NA)})
+
+    observeEvent(input$go, {for (var in c("flock_size", "mortality", "growth", "perc_laying")) updateNumericInput(session, inputId = var, value = filter(defaults(), variable==var) %>% pull(value))})
+            
     output$flock_size = renderText(input$flock_size)
     output$fc = renderReactable(reactable(fc()))
-    output$g = renderPlot(ggplot(fc()) + aes(x=year, y=`flock size`, group=1) + geom_line())
-
+    output$g = renderPlotly(
+        ggplot(fc()) + 
+            aes(x=year, y=flock_size, group=1) + 
+            geom_line() + geom_point() +
+            scale_x_continuous(breaks=fc()$year) + 
+            scale_y_continuous(labels = scales::comma)
+    )
 }
 
 # Run the application
