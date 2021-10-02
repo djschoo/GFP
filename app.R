@@ -1,6 +1,8 @@
 # https://stackoverflow.com/questions/68550960/r-shiny-how-to-make-the-initial-value-for-numericinput-dynamic-based-on-user-i
 
 library(shiny)
+library(shinyWidgets)
+library(plotly)
 library(tidyverse)
 library(readxl)
 library(reactable)
@@ -27,14 +29,15 @@ ui <- fluidPage(
             br(),
             h3("Basic stats"),
             numericInput("num_years", "How many years would you like to forecast?", value = 10, min=1, max=50, step=1),
-            numericInput("flock_size", "What is the initial flock size?", value = NULL),
-            numericInput("mortality", "What is the mortality rate of your flock?", value = NULL),
-            numericInput("growth", "What is the expected growth rate of your flock?", value = NULL),
+            numericInput("flock_size", "What is the initial flock size?", value = NULL, min=0, step=1000),
+            numericInputIcon("mortality", "What is the mortality rate of your flock?", value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))),
+            numericInputIcon("growth", "What is the expected growth rate of your flock?", value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))),
             h4("Costs")
         ),
         
         # Main panel for displaying outputs
         mainPanel(
+            plotOutput("g"),
             reactableOutput("fc")
         )
     )
@@ -46,8 +49,8 @@ server <- function(input, output, session) {
     defaults = reactive(defaults_all %>% filter(country == input$country))
     fc = reactive({
         tibble(
-            year = 0:input$num_years,
-            `flock size` = input$flock_size + (input$growth - input$mortality) * year
+            year = 1:input$num_years,
+            `flock size` = as.integer(input$flock_size * (1 + input$growth/100 - input$mortality/100) ^ year)
     )})
     
     observeEvent(input$country, {
@@ -65,6 +68,7 @@ server <- function(input, output, session) {
     
     output$flock_size = renderText(input$flock_size)
     output$fc = renderReactable(reactable(fc()))
+    output$g = renderPlot(ggplot(fc()) + aes(x=year, y=`flock size`, group=1) + geom_line())
 
 }
 
