@@ -5,7 +5,7 @@ library(tidyverse)
 library(readxl)
 options(scipen = 999)
 
-defaults = read_xlsx("data/country_defaults.xlsx")
+defaults_all = read_xlsx("data/country_defaults.xlsx")
 
 # Define UI
 ui <- fluidPage(
@@ -18,15 +18,23 @@ ui <- fluidPage(
         
         # Sidebar to demonstrate various slider options
         sidebarPanel(
-            h2("Basic stats about your farm"),
-            selectInput("country", "What country are you from?", choices = unique(defaults$country), selected = "China"),
+            h3("Country"),
+            selectInput("country", "What country are you from?", choices = unique(defaults_all$country), selected = NULL),
+            p("Click below to generate some default numbers based on your country"),
+            actionButton("go", "Generate defaults!"),
+            br(),
+            br(),
+            h3("Basic stats"),
+            numericInput("num_years", "How many years would you like to forecast?", value = 10, min=1, max=50, step=1),
             numericInput("flock_size", "What is the initial flock size?", value = NULL),
-            h2("Costs")
+            numericInput("mortality", "What is the mortality rate of your flock?", value = NULL),
+            numericInput("growth", "What is the expected growth rate of your flock?", value = NULL),
+            h4("Costs")
         ),
         
         # Main panel for displaying outputs
         mainPanel(
-            textOutput("flock")
+            textOutput("flock_size")
         )
     )
 )
@@ -34,14 +42,25 @@ ui <- fluidPage(
 # Define server logic
 server <- function(input, output, session) {
     
-    output$flock = renderText(input$flock_size)
+    defaults = reactive(defaults_all %>% filter(country == input$country))
+    fc = tibble()
     
-    default_flock = 
-    observeEvent(
-        input$country, {
-            updateNumericInput(session, inputId = "flock_size", value = filter(defaults, country==input$country, variable=="flock_size") %>% pull(value))
-            #updateNumericInput(session, inputId = "flock_size", value = case_when(input$country == "China" ~ 10, T ~ 500))
+    observeEvent(input$country, {
+        updateNumericInput(session, inputId = "flock_size", value = NA)
+        updateNumericInput(session, inputId = "mortality", value = NA)
+        updateNumericInput(session, inputId = "growth", value = NA)
     })
+    
+    
+    observeEvent(input$go, {
+        updateNumericInput(session, inputId = "flock_size", value = filter(defaults(), variable=="flock_size") %>% pull(value))
+        updateNumericInput(session, inputId = "mortality", value = filter(defaults(), variable=="flock_mortality") %>% pull(value))
+        updateNumericInput(session, inputId = "growth", value = filter(defaults(), variable=="flock_growth") %>% pull(value))
+        
+    })
+    
+    output$flock_size = renderText(input$flock_size)
+
 }
 
 # Run the application
