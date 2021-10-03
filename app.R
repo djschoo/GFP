@@ -9,6 +9,8 @@ library(reactable)
 options(scipen = 999)
 
 defaults_all = read_xlsx("data/country_defaults.xlsx")
+flags = read_xlsx("data/flags.xlsx")
+flags$flag = paste0("https://cdn.jsdelivr.net/gh/lipis/flag-icon-css@master/flags/4x3/", flags$flag, ".svg")
 
 # Define UI
 ui <- fluidPage(
