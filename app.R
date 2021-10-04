@@ -1,4 +1,6 @@
 # https://stackoverflow.com/questions/68550960/r-shiny-how-to-make-the-initial-value-for-numericinput-dynamic-based-on-user-i
+# https://stackoverflow.com/questions/47741321/adding-country-flag-to-pickerinput-shinywidgets
+
 
 library(shiny)
 library(shinyWidgets)
@@ -9,8 +11,12 @@ library(reactable)
 options(scipen = 999)
 
 defaults_all = read_xlsx("data/country_defaults.xlsx")
-flags = read_xlsx("data/flags.xlsx")
-flags$flag = paste0("https://cdn.jsdelivr.net/gh/lipis/flag-icon-css@master/flags/4x3/", flags$flag, ".svg")
+#flags = read_xlsx("data/flags.xlsx")
+
+countries = c("", "China", "Vietnam", "Cambodia")
+flags = c("", "cn", "vn", "kh")
+flags = sapply(flags, function(x) paste0("https://cdn.jsdelivr.net/gh/lipis/flag-icon-css@master/flags/4x3/", x, ".svg"))
+flags[1] = ""
 
 # Define UI
 ui <- fluidPage(
@@ -24,7 +30,13 @@ ui <- fluidPage(
         # Sidebar to demonstrate various slider options
         sidebarPanel(
             h3("Country"),
-            selectInput("country", "What country are you from?", choices = unique(defaults_all$country), selected = NULL),
+            #selectInput("country", "What country are you from?", choices = unique(defaults_all$country), selected = NULL),
+            
+            pickerInput("country", "What country are you from?", multiple = F, choices = countries, 
+                choicesOpt = list(content = mapply(countries, flags, FUN = function(country, flagUrl) {
+                    HTML(paste(tags$img(src=flagUrl, width=20, height=15), country))}, SIMPLIFY = FALSE, USE.NAMES = FALSE))),
+            
+            
             p("Click below to generate some default numbers based on your country"),
             actionButton("go", "Generate defaults!"),
 
