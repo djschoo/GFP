@@ -29,19 +29,15 @@ ui <- fluidPage(
         
         # Sidebar to demonstrate various slider options
         sidebarPanel(
-            h3("Country"),
+            sliderInput("num_years", "How many years in the future would you like to forecast?", value = 10, min=1, max=50, step=1),
             #selectInput("country", "What country are you from?", choices = unique(defaults_all$country), selected = NULL),
             
             pickerInput("country", "What country are you from?", multiple = F, choices = countries, 
                 choicesOpt = list(content = mapply(countries, flags, FUN = function(country, flagUrl) {
                     HTML(paste(tags$img(src=flagUrl, width=20, height=15), country))}, SIMPLIFY = FALSE, USE.NAMES = FALSE))),
+            p("When you pick a country in the box above, we will estimate some of your costs/revenues and fill them in below"),
             
-            
-            p("Click below to generate some default numbers based on your country"),
-            actionButton("go", "Generate defaults!"),
-
             h3("Basic stats"),
-            sliderInput("num_years", "How many years in the future would you like to forecast?", value = 10, min=1, max=50, step=1),
             numericInput("flock_size", "What is the initial flock size?", value = NULL, min=0, step=1000),
             numericInputIcon("mortality", "What is the mortality rate of your flock?", value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))),
             numericInputIcon("growth", "What is the expected growth rate of your flock?", value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))),
@@ -80,10 +76,8 @@ server <- function(input, output, session) {
     event_vars = c("flock_size", "mortality", "growth", "perc_laying", "eggs_laid", "breakage", "price_egg", "price_spent", "price_manure", "cost_feed", "cost_labor", "cost_pullet", "cost_equip", "cost_litter", "cost_vet", "cost_land", "cost_office")
     defaults = reactive(defaults_all %>% filter(country == input$country))
     
-    observeEvent(input$country, {for (var in event_vars) updateNumericInput(session, inputId = var, value = NA)})
+    observeEvent(input$country, {for (var in event_vars) updateNumericInput(session, inputId = var, value = filter(defaults(), variable==var) %>% pull(value))})
 
-    observeEvent(input$go, {for (var in event_vars) updateNumericInput(session, inputId = var, value = filter(defaults(), variable==var) %>% pull(value))})
-    
     fc = reactive({
         tibble(
             year = 1:input$num_years,
@@ -110,9 +104,10 @@ server <- function(input, output, session) {
             cost_total = cost_variable_total + cost_fixed_total,
             profit = revenue_total - cost_total
         )})
-            
-    output$fc = renderReactable(reactable(fc()))
-    output$g = renderPlotly(
+    
+    observeEvent(input$country, {if (input$country != "") {
+        output$fc = renderReactable(reactable(fc()))
+        output$g = renderPlotly(
         fc() %>%
             pivot_longer(cols = 2:ncol(fc())) %>%
             mutate(facet = case_when(
@@ -131,6 +126,10 @@ server <- function(input, output, session) {
             scale_y_continuous(labels = scales::comma) +
             labs(y=NULL)
     )
+    } else {
+        output$fc = NULL
+        output$g = NULL
+    }})
 }
 
 # Run the application
