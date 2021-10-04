@@ -1,7 +1,3 @@
-# https://stackoverflow.com/questions/68550960/r-shiny-how-to-make-the-initial-value-for-numericinput-dynamic-based-on-user-i
-# https://stackoverflow.com/questions/47741321/adding-country-flag-to-pickerinput-shinywidgets
-
-
 library(shiny)
 library(shinyWidgets)
 library(plotly)
@@ -10,13 +6,24 @@ library(readxl)
 library(reactable)
 options(scipen = 999)
 
-defaults_all = read_xlsx("data/country_defaults.xlsx")
-#flags = read_xlsx("data/flags.xlsx")
-
 countries = c("", "China", "Vietnam", "Cambodia")
 flags = c("", "cn", "vn", "kh")
 flags = sapply(flags, function(x) paste0("https://cdn.jsdelivr.net/gh/lipis/flag-icon-css@master/flags/4x3/", x, ".svg"))
 flags[1] = ""
+
+defaults_all = read_xlsx("data/country_defaults.xlsx")
+event_vars = defaults_all$variable %>% unique()
+
+pl = function(df) {
+    df %>%
+    pivot_longer(cols = 2:ncol(df)) %>%
+    ggplot() + 
+    aes(x=year, y=value, color=name) + 
+    geom_line() + geom_point() +
+    scale_x_continuous(breaks=df$year) + 
+    scale_y_continuous(labels = scales::comma) +
+    labs(y=NULL, color=NULL)
+}
 
 # Define UI
 ui <- fluidPage(
@@ -30,11 +37,7 @@ ui <- fluidPage(
         # Sidebar to demonstrate various slider options
         sidebarPanel(
             sliderInput("num_years", "How many years in the future would you like to forecast?", value = 10, min=1, max=50, step=1),
-            #selectInput("country", "What country are you from?", choices = unique(defaults_all$country), selected = NULL),
-            
-            pickerInput("country", "What country are you from?", multiple = F, choices = countries, 
-                choicesOpt = list(content = mapply(countries, flags, FUN = function(country, flagUrl) {
-                    HTML(paste(tags$img(src=flagUrl, width=20, height=15), country))}, SIMPLIFY = FALSE, USE.NAMES = FALSE))),
+            pickerInput("country", "What country are you from?", multiple = F, choices = countries, choicesOpt = list(content = mapply(countries, flags, FUN = function(country, flagUrl) {HTML(paste(tags$img(src=flagUrl, width=20, height=15), country))}, SIMPLIFY = FALSE, USE.NAMES = FALSE))),
             p("When you pick a country in the box above, we will estimate some of your costs/revenues and fill them in below"),
             
             h3("Basic stats"),
@@ -65,15 +68,16 @@ ui <- fluidPage(
         
         # Main panel for displaying outputs
         mainPanel(
-            plotlyOutput("g"),
-            reactableOutput("fc")
+            plotlyOutput("g_eggs"),
+            reactableOutput("fc_eggs")
         )
     )
 )
 
 # Define server logic
 server <- function(input, output, session) {
-    event_vars = c("flock_size", "mortality", "growth", "perc_laying", "eggs_laid", "breakage", "price_egg", "price_spent", "price_manure", "cost_feed", "cost_labor", "cost_pullet", "cost_equip", "cost_litter", "cost_vet", "cost_land", "cost_office")
+    #event_vars = c("flock_size", "mortality", "growth", "perc_laying", "eggs_laid", "breakage", "price_egg", "price_spent", "price_manure", "cost_feed", "cost_labor", "cost_pullet", "cost_equip", "cost_litter", "cost_vet", "cost_land", "cost_office")
+    
     defaults = reactive(defaults_all %>% filter(country == input$country))
     
     observeEvent(input$country, {for (var in event_vars) updateNumericInput(session, inputId = var, value = filter(defaults(), variable==var) %>% pull(value))})
@@ -105,30 +109,17 @@ server <- function(input, output, session) {
             profit = revenue_total - cost_total
         )})
     
+    #eggs = fc() %>% select(year, flock_size, viable_hens, spent_hens, num_eggs, broken_eggs)
+    
     observeEvent(input$country, {if (input$country != "") {
-        output$fc = renderReactable(reactable(fc()))
-        output$g = renderPlotly(
-        fc() %>%
-            pivot_longer(cols = 2:ncol(fc())) %>%
-            mutate(facet = case_when(
-                name %in% c("flock_size", "viable_hens", "spent_hens") ~ "flock", 
-                name %in% c("num_eggs", "broken_eggs", "viable_eggs") ~ "eggs",  
-                name %in% c("revenue_eggs", "revenue_spent", "revenue_manure") ~ "revenue",
-                name %in% c("cost_feed", "cost_feed", "cost_labor", "cost_pullet", "cost_equip", "cost_litter", "cost_vet", "cost_variable_total") ~ "variable costs",
-                name %in% c("cost_land", "cost_office", "cost_fixed_total") ~ "fixed costs",
-                name %in% c("cost_total", "revenue_total", "profit") ~ "total",
-                T ~ "error!")) %>%
-            ggplot() + 
-            aes(x=year, y=value, color=name) + 
-            facet_wrap(~facet, ncol=1, scales='free_y') +
-            geom_line() + geom_point() +
-            scale_x_continuous(breaks=fc()$year) + 
-            scale_y_continuous(labels = scales::comma) +
-            labs(y=NULL)
-    )
+        
+        # output$fc_eggs = renderReactable(reactable(eggs))
+        # output$g_eggs = renderPlotly(pl(eggs))
+        output$fc_eggs = renderReactable(reactable(fc()))
+        output$g_eggs = renderPlotly(pl(fc()))
     } else {
-        output$fc = NULL
-        output$g = NULL
+        output$fc_eggs = NULL
+        output$g_eggs = NULL
     }})
 }
 
