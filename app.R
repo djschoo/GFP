@@ -68,8 +68,11 @@ ui <- fluidPage(
         
         # Main panel for displaying outputs
         mainPanel(
-            plotlyOutput("g_eggs"),
-            reactableOutput("fc_eggs")
+            conditionalPanel(
+                condition = "input.country != ''",
+                plotlyOutput("g_eggs"),
+                reactableOutput("fc_eggs")
+            )
         )
     )
 )
@@ -111,16 +114,18 @@ server <- function(input, output, session) {
     
     #eggs = fc() %>% select(year, flock_size, viable_hens, spent_hens, num_eggs, broken_eggs)
     
-    observeEvent(input$country, {if (input$country != "") {
-        
-        # output$fc_eggs = renderReactable(reactable(eggs))
-        # output$g_eggs = renderPlotly(pl(eggs))
-        output$fc_eggs = renderReactable(reactable(fc()))
-        output$g_eggs = renderPlotly(pl(fc()))
-    } else {
-        output$fc_eggs = NULL
-        output$g_eggs = NULL
-    }})
+    # observeEvent(input$country, {if (input$country != "") {
+    #     # output$fc_eggs = renderReactable(reactable(eggs))
+    #     # output$g_eggs = renderPlotly(pl(eggs))
+    #     output$fc_eggs = renderReactable(reactable(fc()))
+    #     output$g_eggs = renderPlotly(pl(fc()))
+    # } else {
+    #     output$fc_eggs = NULL
+    #     output$g_eggs = NULL
+    # }})
+    
+    output$fc_eggs = renderReactable(reactable(fc()))
+    output$g_eggs = renderPlotly(pl(fc()))
 }
 
 # Run the application
