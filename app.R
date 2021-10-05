@@ -14,14 +14,14 @@ flags[1] = ""
 defaults_all = read_xlsx("data/country_defaults.xlsx")
 event_vars = defaults_all$variable %>% unique()
 
-pl = function(df) {
+pl = function(df, l=scales::comma) {
     df %>%
     pivot_longer(cols = 2:ncol(df)) %>%
     ggplot() + 
     aes(x=`Year`, y=value, color=name) + 
     geom_line() + geom_point() +
     scale_x_continuous(breaks=df$`Year`) + 
-    scale_y_continuous(labels = scales::comma) +
+    scale_y_continuous(labels = l) +
     labs(y=NULL, color=NULL)
 }
 
@@ -76,7 +76,15 @@ ui <- fluidPage(
                 
                 h4("Eggs"),
                 plotlyOutput("g_eggs"),
-                reactableOutput("t_eggs")
+                reactableOutput("t_eggs"),
+                
+                h4("Revenues"),
+                plotlyOutput("g_revenues"),
+                reactableOutput("t_revenues"),
+                
+                h4("Totals"),
+                plotlyOutput("g_totals"),
+                reactableOutput("t_totals")
             )
         )
     )
@@ -84,7 +92,6 @@ ui <- fluidPage(
 
 # Define server logic
 server <- function(input, output, session) {
-    #event_vars = c("flock_size", "mortality", "growth", "perc_laying", "eggs_laid", "breakage", "price_egg", "price_spent", "price_manure", "cost_feed", "cost_labor", "cost_pullet", "cost_equip", "cost_litter", "cost_vet", "cost_land", "cost_office")
     
     defaults = reactive(defaults_all %>% filter(country == input$country))
     observeEvent(input$country, {for (var in event_vars) updateNumericInput(session, inputId = var, value = filter(defaults(), variable==var) %>% pull(value))})
@@ -123,6 +130,14 @@ server <- function(input, output, session) {
     eggs = reactive(fc() %>% select(year, num_eggs, viable_eggs, broken_eggs) %>% setNames(c("Year", "Number of Eggs", "Viable Eggs", "Broken Eggs")))
     output$t_eggs = renderReactable(reactable(eggs() %>% mutate(across(2:4, scales::comma))))
     output$g_eggs = renderPlotly(pl(eggs()))
+    
+    revenues = reactive(fc() %>% select(year, starts_with("revenue")) %>% setNames(c("Year", "Eggs", "Spent Hens", "Manure", "Total")))
+    output$t_revenues = renderReactable(reactable(revenues() %>% mutate(across(2:5, scales::dollar))))
+    output$g_revenues = renderPlotly(pl(revenues(), l = scales::dollar))
+    
+    totals = reactive(fc() %>% select(year, cost_total, revenue_total, profit) %>% setNames(c("Year", "Total Cost", "Total Revenue", "Total Profit")))
+    output$t_totals = renderReactable(reactable(totals() %>% mutate(across(2:4, scales::dollar))))
+    output$g_totals = renderPlotly(pl(totals(), l = scales::dollar))
 }
 
 # Run the application
