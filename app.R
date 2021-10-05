@@ -18,9 +18,9 @@ pl = function(df) {
     df %>%
     pivot_longer(cols = 2:ncol(df)) %>%
     ggplot() + 
-    aes(x=year, y=value, color=name) + 
+    aes(x=`Year`, y=value, color=name) + 
     geom_line() + geom_point() +
-    scale_x_continuous(breaks=df$year) + 
+    scale_x_continuous(breaks=df$`Year`) + 
     scale_y_continuous(labels = scales::comma) +
     labs(y=NULL, color=NULL)
 }
@@ -70,8 +70,13 @@ ui <- fluidPage(
         mainPanel(
             conditionalPanel(
                 condition = "input.country != ''",
+                h4("Flock"),
+                plotlyOutput("g_flock"),
+                reactableOutput("t_flock"),
+                
+                h4("Eggs"),
                 plotlyOutput("g_eggs"),
-                reactableOutput("fc_eggs")
+                reactableOutput("t_eggs")
             )
         )
     )
@@ -82,7 +87,6 @@ server <- function(input, output, session) {
     #event_vars = c("flock_size", "mortality", "growth", "perc_laying", "eggs_laid", "breakage", "price_egg", "price_spent", "price_manure", "cost_feed", "cost_labor", "cost_pullet", "cost_equip", "cost_litter", "cost_vet", "cost_land", "cost_office")
     
     defaults = reactive(defaults_all %>% filter(country == input$country))
-    
     observeEvent(input$country, {for (var in event_vars) updateNumericInput(session, inputId = var, value = filter(defaults(), variable==var) %>% pull(value))})
 
     fc = reactive({
@@ -112,20 +116,13 @@ server <- function(input, output, session) {
             profit = revenue_total - cost_total
         )})
     
-    #eggs = fc() %>% select(year, flock_size, viable_hens, spent_hens, num_eggs, broken_eggs)
+    flock = reactive(fc() %>% select(year, flock_size, viable_hens, spent_hens) %>% setNames(c("Year", "Flock Size", "Viable Hens", "Spent Hens")))
+    output$t_flock = renderReactable(reactable(flock() %>% mutate(across(2:4, scales::comma))))
+    output$g_flock = renderPlotly(pl(flock()))
     
-    # observeEvent(input$country, {if (input$country != "") {
-    #     # output$fc_eggs = renderReactable(reactable(eggs))
-    #     # output$g_eggs = renderPlotly(pl(eggs))
-    #     output$fc_eggs = renderReactable(reactable(fc()))
-    #     output$g_eggs = renderPlotly(pl(fc()))
-    # } else {
-    #     output$fc_eggs = NULL
-    #     output$g_eggs = NULL
-    # }})
-    
-    output$fc_eggs = renderReactable(reactable(fc()))
-    output$g_eggs = renderPlotly(pl(fc()))
+    eggs = reactive(fc() %>% select(year, num_eggs, viable_eggs, broken_eggs) %>% setNames(c("Year", "Number of Eggs", "Viable Eggs", "Broken Eggs")))
+    output$t_eggs = renderReactable(reactable(eggs() %>% mutate(across(2:4, scales::comma))))
+    output$g_eggs = renderPlotly(pl(eggs()))
 }
 
 # Run the application
