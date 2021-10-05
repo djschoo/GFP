@@ -41,12 +41,15 @@ ui <- fluidPage(
             p("When you pick a country in the box above, we will estimate some of your costs/revenues and fill them in below"),
             
             h3("Basic stats"),
-            numericInput("flock_size", "What is the initial flock size?", value = NULL, min=0, step=1000),
-            numericInputIcon("mortality", "What is the mortality rate of your flock?", value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))),
-            numericInputIcon("growth", "What is the expected growth rate of your flock?", value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))),
-            numericInputIcon("perc_laying", "What percentage of your flock lays eggs?", value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))),
-            numericInput("eggs_laid", "What number of eggs does each hen lay?", value = NULL, min=0, step=1000),
-            numericInputIcon("breakage", "What percentage of eggs break?", value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))),
+            fluidRow(
+                column(6, numericInput("flock_size", "What is the initial flock size?", value = NULL, min=0, step=1000)),
+                column(6, numericInputIcon("mortality", "What is the mortality rate of your flock?", value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))))),
+            fluidRow(
+                column(6, numericInputIcon("growth", "What is the expected growth rate of your flock?", value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent")))),
+                column(6, numericInputIcon("perc_laying", "What percentage of your flock lays eggs?", value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))))),
+            fluidRow(
+                column(6, numericInput("eggs_laid", "How many eggs does each hen lay?", value = NULL, min=0, step=1000)),
+                column(6, numericInputIcon("breakage", "What percentage of eggs break?", value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))))),
 
             h3("Revenue per egg"),
             numericInputIcon("price_egg", "What is the selling price per egg?", value = NULL, min=0, max=10, step=.5, icon = list(icon("dollar", verify_fa=F))),
