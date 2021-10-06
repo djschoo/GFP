@@ -18,6 +18,7 @@ pl = function(df, l=scales::comma) {
     df %>%
     pivot_longer(cols = 2:ncol(df)) %>%
     ggplot() + 
+    theme_light() +
     aes(x=`Year`, y=value, color=name) + 
     geom_line() + geom_point() +
     scale_x_continuous(breaks=df$`Year`) + 
