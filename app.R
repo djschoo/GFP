@@ -73,21 +73,24 @@ ui <- fluidPage(
         mainPanel(
             conditionalPanel(
                 condition = "input.country != ''",
-                h4("Flock"),
-                plotlyOutput("g_flock"),
-                reactableOutput("t_flock"),
-                
-                h4("Eggs"),
-                plotlyOutput("g_eggs"),
-                reactableOutput("t_eggs"),
-                
-                h4("Revenues"),
-                plotlyOutput("g_revenues"),
-                reactableOutput("t_revenues"),
-                
-                h4("Totals"),
-                plotlyOutput("g_totals"),
-                reactableOutput("t_totals")
+                tabsetPanel(
+                    tabPanel("Flock",
+                    #h4("Flock"),
+                    plotlyOutput("g_flock"),
+                    reactableOutput("t_flock")),
+                    
+                    tabPanel("Eggs",
+                    plotlyOutput("g_eggs"),
+                    reactableOutput("t_eggs")),
+                    
+                    tabPanel("Revenues",
+                    plotlyOutput("g_revenues"),
+                    reactableOutput("t_revenues")),
+                    
+                    tabPanel("Totals",
+                    plotlyOutput("g_totals"),
+                    reactableOutput("t_totals"))
+                )
             )
         )
     )
