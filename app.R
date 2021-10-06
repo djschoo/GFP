@@ -21,6 +21,7 @@ pl = function(df, l=scales::comma) {
     theme_light() +
     aes(x=`Year`, y=value, color=name) + 
     geom_line() + geom_point() +
+    
     scale_x_continuous(breaks=df$`Year`) + 
     scale_y_continuous(labels = l) +
     labs(y=NULL, color=NULL)
@@ -144,7 +145,18 @@ server <- function(input, output, session) {
     
     totals = reactive(fc() %>% select(year, cost_total, revenue_total, profit) %>% setNames(c("Year", "Total Cost", "Total Revenue", "Total Profit")))
     output$t_totals = renderReactable(reactable(totals() %>% mutate(across(2:4, scales::dollar))))
-    output$g_totals = renderPlotly(pl(totals(), l = scales::dollar))
+    output$g_totals = renderPlotly(
+        totals() %>%
+            pivot_longer(cols = 2:4) %>%
+            ggplot() + 
+            theme_light() +
+            aes(x=`Year`, y=value, color=name) + 
+            geom_line() + geom_point() +
+            geom_ribbon(aes(ymax=value*1.05, ymin=value*.95, alpha=.1, fill=name)) +
+            scale_x_continuous(breaks=totals()$`Year`) + 
+            scale_y_continuous(labels = scales::dollar) +
+            labs(y=NULL, color=NULL)
+    )
 }
 
 # Run the application
