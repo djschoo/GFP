@@ -1,0 +1,14 @@
+name: GFP-eggs
+title: GFP-eggs
+username:
+account: djschoo
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 4807833
+bundleId: 5108557
+url: https://djschoo.shinyapps.io/GFP-eggs/
+when: 1633492913.73296
+lastSyncTime: 1633492913.73296
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: docs/.gitignore|docs/Cage-free egg calculator_29Sep2021.xlsx|docs/Economic Cost of Transitioning from Battery Cages - formatted. Pegasus. Oct 2020.pdf

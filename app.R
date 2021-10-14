@@ -6,12 +6,14 @@ library(readxl)
 library(reactable)
 options(scipen = 999)
 
-countries = c("", "China", "Vietnam", "Cambodia")
-flags = c("", "cn", "vn", "kh")
+countries_all = read_excel("www/countries.xlsx", sheet="countries")
+countries = c("", countries_all$country)
+flags = c("", countries_all$symbol)
+currencies = c("icon('dollar')", countries_all$currency)
 flags = sapply(flags, function(x) paste0("https://cdn.jsdelivr.net/gh/lipis/flag-icon-css@master/flags/4x3/", x, ".svg"))
 flags[1] = ""
 
-defaults_all = read_xlsx("data/country_defaults.xlsx")
+defaults_all = read_excel("www/countries.xlsx", sheet="defaults")
 event_vars = defaults_all$variable %>% unique()
 
 pl = function(df, l=scales::comma) {
@@ -54,21 +56,21 @@ ui <- fluidPage(
                 column(6, numericInputIcon("breakage", "What percentage of eggs break?", value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))))),
 
             h3("Revenue per egg"),
-            numericInputIcon("price_egg", "What is the selling price per egg?", value = NULL, min=0, max=10, step=.5, icon = list(icon("dollar", verify_fa=F))),
-            numericInputIcon("price_spent", "What is your revenue per spent hen?", value = NULL, min=0, max=10, step=.5, icon=list(icon("dollar", verify_fa=F))),
-            numericInputIcon("price_manure", "What is your revenue for manure from your spent hens?", value = NULL, min=0, max=10, step=.5, icon=list(icon("dollar", verify_fa=F))),
+            numericInputIcon("price_egg", "What is the selling price per egg?", value = NULL, min=0, max=10, step=.5, icon = icon("dollar", verify_fa=F)),
+            numericInputIcon("price_spent", "What is your revenue per spent hen?", value = NULL, min=0, max=10, step=.5, icon = icon("dollar", verify_fa=F)),
+            numericInputIcon("price_manure", "What is your revenue for manure from your spent hens?", value = NULL, min=0, max=10, step=.5, icon = icon("dollar", verify_fa=F)),
 
             h3("Cost per bird"),
-            numericInputIcon("cost_feed", "What is the feed cost per bird per year?", value = NULL, min=0, max=5000, step=.5, icon=list(icon("dollar", verify_fa=F))),
-            numericInputIcon("cost_labor", "What is the cost per labor per bird per year?", value = NULL, min=0, max=5000, step=.5, icon=list(icon("dollar", verify_fa=F))),
-            numericInputIcon("cost_pullet", "What is the cost per pullet per bird per year?", value = NULL, min=0, max=5000, step=.5, icon=list(icon("dollar", verify_fa=F))),
-            numericInputIcon("cost_equip", "What is the cost per equipment & maintenance per year?", value = NULL, min=0, max=5000, step=.5, icon=list(icon("dollar", verify_fa=F))),
-            numericInputIcon("cost_litter", "What is the cost per litter per bird per year?", value = NULL, min=0, max=5000, step=.5, icon=list(icon("dollar", verify_fa=F))),
-            numericInputIcon("cost_vet", "What is the cost per vaccination/veterinary per bird per year?", value = NULL, min=0, max=5000, step=.5, icon=list(icon("dollar", verify_fa=F))),
+            numericInputIcon("cost_feed", "What is the feed cost per bird per year?", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
+            numericInputIcon("cost_labor", "What is the cost per labor per bird per year?", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
+            numericInputIcon("cost_pullet", "What is the cost per pullet per bird per year?", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
+            numericInputIcon("cost_equip", "What is the cost per equipment & maintenance per year?", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
+            numericInputIcon("cost_litter", "What is the cost per litter per bird per year?", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
+            numericInputIcon("cost_vet", "What is the cost per vaccination/veterinary per bird per year?", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
             
             h3("Fixed costs per year"),
-            numericInputIcon("cost_land", "What is the cost of your land per year?", value = NULL, min=0, max=50000, step=.5, icon=list(icon("dollar", verify_fa=F))),
-            numericInputIcon("cost_office", "What is the cost of your office rent per year?", value = NULL, min=0, max=50000, step=.5, icon=list(icon("dollar", verify_fa=F)))
+            numericInputIcon("cost_land", "What is the cost of your land per year?", value = NULL, min=0, max=50000, step=.5, icon = icon("dollar", verify_fa=F)),
+            numericInputIcon("cost_office", "What is the cost of your office rent per year?", value = NULL, min=0, max=50000, step=.5, icon = icon("dollar", verify_fa=F))
         ),
         
         # Main panel for displaying outputs
