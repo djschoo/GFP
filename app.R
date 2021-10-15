@@ -51,37 +51,36 @@ ui <- fluidPage(
         
         # Sidebar to demonstrate various slider options
         sidebarPanel(
-            sliderInput("num_years", "How many years in the future would you like to forecast?", value = 10, min=1, max=50, step=1),
-            pickerInput("country", "What country are you from?", multiple = F, choices = countries, choicesOpt = list(content = mapply(countries, flags, FUN = function(country, flagUrl) {HTML(paste(tags$img(src=flagUrl, width=20, height=15), country))}, SIMPLIFY = FALSE, USE.NAMES = FALSE))),
-            p("When you pick a country in the box above, we will estimate some of your costs/revenues and fill them in below"),
+            sliderInput("num_years", "Number of Years to Forecast", value = 10, min=1, max=50, step=1),
+            pickerInput("country", "Your Country", multiple = F, choices = countries, choicesOpt = list(content = mapply(countries, flags, FUN = function(country, flagUrl) {HTML(paste(tags$img(src=flagUrl, width=20, height=15), country))}, SIMPLIFY = FALSE, USE.NAMES = FALSE))),
             
-            h3("Basic stats"),
+            h3("Basic Statistics"),
             fluidRow(
-                column(6, numericInput("flock_size", "What is the initial flock size?", value = NULL, min=0, step=1000)),
-                column(6, numericInputIcon("mortality", "What is the mortality rate of your flock?", value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))))),
+                column(6, numericInput("flock_size", "Initial Size of the Flock", value = NULL, min=0, step=1000)),
+                column(6, numericInputIcon("mortality", "Mortality Rate", value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))))),
             fluidRow(
-                column(6, numericInputIcon("growth", "What is the expected growth rate of your flock?", value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent")))),
-                column(6, numericInputIcon("perc_laying", "What percentage of your flock lays eggs?", value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))))),
+                column(6, numericInputIcon("growth", "Growth Rate of the Flock", value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent")))),
+                column(6, numericInputIcon("perc_laying", "Percentage of Flock that Lays Eggs", value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))))),
             fluidRow(
-                column(6, numericInput("eggs_laid", "How many eggs does each hen lay?", value = NULL, min=0, step=1000)),
-                column(6, numericInputIcon("breakage", "What percentage of eggs break?", value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))))),
+                column(6, numericInput("eggs_laid", "Average Number of Eggs Laid per Bird", value = NULL, min=0, step=1000)),
+                column(6, numericInputIcon("breakage", "Percentage of Eggs that Break", value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))))),
 
-            h3("Revenue per egg"),
-            numericInputIcon("price_egg", "What is the selling price per egg?", value = NULL, min=0, max=10, step=.5, icon = icon("dollar", verify_fa=F)),
-            numericInputIcon("price_spent", "What is your revenue per spent hen?", value = NULL, min=0, max=10, step=.5, icon = icon("dollar", verify_fa=F)),
-            numericInputIcon("price_manure", "What is your revenue for manure from your spent hens?", value = NULL, min=0, max=10, step=.5, icon = icon("dollar", verify_fa=F)),
+            h3("Revenues"),
+            numericInputIcon("price_egg", "Selling Price per Egg", value = NULL, min=0, max=10, step=.5, icon = icon("dollar", verify_fa=F)),
+            numericInputIcon("price_spent", "Price per Spent Hen", value = NULL, min=0, max=10, step=.5, icon = icon("dollar", verify_fa=F)),
+            numericInputIcon("price_manure", "Price from Manure from Spent Hens", value = NULL, min=0, max=10, step=.5, icon = icon("dollar", verify_fa=F)),
 
-            h3("Cost per bird"),
-            numericInputIcon("cost_feed", "What is the feed cost per bird per year?", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
-            numericInputIcon("cost_labor", "What is the cost per labor per bird per year?", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
-            numericInputIcon("cost_pullet", "What is the cost per pullet per bird per year?", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
-            numericInputIcon("cost_equip", "What is the cost per equipment & maintenance per year?", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
-            numericInputIcon("cost_litter", "What is the cost per litter per bird per year?", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
-            numericInputIcon("cost_vet", "What is the cost per vaccination/veterinary per bird per year?", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
+            h3("Variable Yearly Costs"),
+            numericInputIcon("cost_feed", "Feed", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
+            numericInputIcon("cost_labor", "Labour", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
+            numericInputIcon("cost_pullet", "Pullets", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
+            numericInputIcon("cost_equip", "Equipment & Maintenance", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
+            numericInputIcon("cost_litter", "Litter", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
+            numericInputIcon("cost_vet", "Vaccinations/Veterinary Care", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
             
-            h3("Fixed costs per year"),
-            numericInputIcon("cost_land", "What is the cost of your land per year?", value = NULL, min=0, max=50000, step=.5, icon = icon("dollar", verify_fa=F)),
-            numericInputIcon("cost_office", "What is the cost of your office rent per year?", value = NULL, min=0, max=50000, step=.5, icon = icon("dollar", verify_fa=F))
+            h3("Fixed Yearly Costs"),
+            numericInputIcon("cost_land", "Land", value = NULL, min=0, max=50000, step=.5, icon = icon("dollar", verify_fa=F)),
+            numericInputIcon("cost_office", "Office Rental", value = NULL, min=0, max=50000, step=.5, icon = icon("dollar", verify_fa=F))
         ),
         
         # Main panel for displaying outputs
