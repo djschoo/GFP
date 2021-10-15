@@ -66,21 +66,33 @@ ui <- fluidPage(
                 column(6, numericInputIcon("breakage", "Percentage of Eggs that Break", value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))))),
 
             h3("Revenues"),
-            numericInputIcon("price_egg", "Selling Price per Egg", value = NULL, min=0, max=10, step=.5, icon = icon("dollar", verify_fa=F)),
-            numericInputIcon("price_spent", "Price per Spent Hen", value = NULL, min=0, max=10, step=.5, icon = icon("dollar", verify_fa=F)),
-            numericInputIcon("price_manure", "Price from Manure from Spent Hens", value = NULL, min=0, max=10, step=.5, icon = icon("dollar", verify_fa=F)),
+            fluidRow(
+                column(6, numericInputIcon("price_egg", "Selling Price per Egg", value = NULL, min=0, max=10, step=.5, icon = icon("dollar", verify_fa=F))),
+                column(6, numericInputIcon("price_spent", "Price per Spent Hen", value = NULL, min=0, max=10, step=.5, icon = icon("dollar", verify_fa=F)))
+            ),
+            fluidRow(
+                column(6, numericInputIcon("price_manure", "Price from Manure from Spent Hens", value = NULL, min=0, max=10, step=.5, icon = icon("dollar", verify_fa=F)))
+            ),
 
             h3("Variable Yearly Costs"),
-            numericInputIcon("cost_feed", "Feed", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
-            numericInputIcon("cost_labor", "Labour", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
-            numericInputIcon("cost_pullet", "Pullets", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
-            numericInputIcon("cost_equip", "Equipment & Maintenance", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
-            numericInputIcon("cost_litter", "Litter", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
-            numericInputIcon("cost_vet", "Vaccinations/Veterinary Care", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
+            fluidRow(
+                column(6, numericInputIcon("cost_feed", "Feed", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F))),
+                column(6, numericInputIcon("cost_labor", "Labour", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)))
+            ),
+            fluidRow(
+                column(6, numericInputIcon("cost_pullet", "Pullets\n\n", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F))),
+                column(6, numericInputIcon("cost_equip", "Equipment & Maintenance", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)))
+            ),
+            fluidRow(
+                column(6, numericInputIcon("cost_litter", "Litter", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F))),
+                column(6, numericInputIcon("cost_vet", "Vaccinations/Veterinary Care", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)))
+            ),
             
             h3("Fixed Yearly Costs"),
-            numericInputIcon("cost_land", "Land", value = NULL, min=0, max=50000, step=.5, icon = icon("dollar", verify_fa=F)),
-            numericInputIcon("cost_office", "Office Rental", value = NULL, min=0, max=50000, step=.5, icon = icon("dollar", verify_fa=F))
+            fluidRow(
+                column(6, numericInputIcon("cost_land", "Land", value = NULL, min=0, max=50000, step=.5, icon = icon("dollar", verify_fa=F))),
+                column(6, numericInputIcon("cost_office", "Office Rental", value = NULL, min=0, max=50000, step=.5, icon = icon("dollar", verify_fa=F)))
+            )
         ),
         
         # Main panel for displaying outputs
