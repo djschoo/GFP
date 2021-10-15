@@ -9,12 +9,23 @@ options(scipen = 999)
 countries_all = read_excel("www/countries.xlsx", sheet="countries")
 countries = c("", countries_all$country)
 flags = c("", countries_all$symbol)
-currencies = c("icon('dollar')", countries_all$currency)
+currencies_df = countries_all %>% select(currency_icon, currency_text)
+currencies = list(icon("dollar"))
+for (i in 1:nrow(currencies_df)) {
+    if (!is.na(currencies_df[i, 'currency_icon'])) {
+        ic = currencies_df[[i, 'currency_icon']]
+        currencies[length(currencies) + 1] = list(eval(parse(text=paste0("icon('", ic, "')"))))
+    } else {
+        ic = currencies_df[[i, 'currency_text']]
+        currencies[length(currencies) + 1] = ic
+    }
+}
 flags = sapply(flags, function(x) paste0("https://cdn.jsdelivr.net/gh/lipis/flag-icon-css@master/flags/4x3/", x, ".svg"))
 flags[1] = ""
 
 defaults_all = read_excel("www/countries.xlsx", sheet="defaults")
 event_vars = defaults_all$variable %>% unique()
+currency_vars = c("price_egg", "price_spent", "price_manure", "cost_feed", "cost_labor", "cost_pullet", "cost_equip", "cost_litter", "cost_vet", "cost_land", "cost_office")
 
 pl = function(df, l=scales::comma) {
     df %>%
@@ -105,6 +116,8 @@ server <- function(input, output, session) {
     
     defaults = reactive(defaults_all %>% filter(country == input$country))
     observeEvent(input$country, {for (var in event_vars) updateNumericInput(session, inputId = var, value = filter(defaults(), variable==var) %>% pull(value))})
+    observeEvent(input$country, {for (var in currency_vars) updateNumericInputIcon(session, inputId = var, icon = currencies[match(input$country, countries)])
+    })
 
     fc = reactive({
         tibble(
