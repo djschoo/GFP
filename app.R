@@ -42,6 +42,8 @@ pl = function(df, l=scales::comma, ylabel=NULL) {
     labs(y=ylabel, color=NULL)
 }
 
+info_icon = function(text, message='blah blah') tags$span(text, tags$i(class = "glyphicon glyphicon-info-sign", style = "color:#0072B2;", title = message))
+    
 # Define UI
 ui <- fluidPage(
     
@@ -53,47 +55,47 @@ ui <- fluidPage(
         
         # Sidebar to demonstrate various slider options
         sidebarPanel(
-            sliderInput("num_years", "Number of Years to Forecast", value = 10, min=1, max=50, step=1),
-            pickerInput("country", "Your Country", multiple = F, choices = countries, choicesOpt = list(content = mapply(countries, flags, FUN = function(country, flagUrl) {HTML(paste(tags$img(src=flagUrl, width=20, height=15), country))}, SIMPLIFY = FALSE, USE.NAMES = FALSE))),
+            sliderInput("num_years", label=info_icon("Number of Years to Forecast"), value = 10, min=1, max=50, step=1),
+            pickerInput("country", info_icon("Your Country"), multiple = F, choices = countries, choicesOpt = list(content = mapply(countries, flags, FUN = function(country, flagUrl) {HTML(paste(tags$img(src=flagUrl, width=20, height=15), country))}, SIMPLIFY = FALSE, USE.NAMES = FALSE))),
             
             h3("Basic Statistics"),
             fluidRow(
-                column(6, numericInput("flock_size", "Initial Size of the Flock", value = NULL, min=0, step=1000)),
-                column(6, numericInputIcon("mortality", "Mortality Rate", value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))))),
+                column(6, numericInput("flock_size", info_icon("Initial Size of the Flock"), value = NULL, min=0, step=1000)),
+                column(6, numericInputIcon("mortality", info_icon("Mortality Rate"), value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))))),
             fluidRow(
-                column(6, numericInputIcon("growth", "Growth Rate of the Flock", value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent")))),
-                column(6, numericInputIcon("perc_laying", "Percentage of Flock that Lays Eggs", value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))))),
+                column(6, numericInputIcon("growth", info_icon("Growth Rate of the Flock"), value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent")))),
+                column(6, numericInputIcon("perc_laying", info_icon("Percentage of Flock that Lays Eggs"), value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))))),
             fluidRow(
-                column(6, numericInput("eggs_laid", "Average Number of Eggs Laid per Bird", value = NULL, min=0, step=1000)),
-                column(6, numericInputIcon("breakage", "Percentage of Eggs that Break", value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))))),
+                column(6, numericInput("eggs_laid", info_icon("Average Number of Eggs Laid per Bird"), value = NULL, min=0, step=1000)),
+                column(6, numericInputIcon("breakage", info_icon("Percentage of Eggs that Break"), value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))))),
 
             h3("Revenues"),
             fluidRow(
-                column(6, numericInputIcon("price_egg", "Selling Price per Egg", value = NULL, min=0, max=10, step=.5, icon = icon("dollar", verify_fa=F))),
-                column(6, numericInputIcon("price_spent", "Price per Spent Hen", value = NULL, min=0, max=10, step=.5, icon = icon("dollar", verify_fa=F)))
+                column(6, numericInputIcon("price_egg", info_icon("Selling Price per Egg"), value = NULL, min=0, max=10, step=.5, icon = icon("dollar", verify_fa=F))),
+                column(6, numericInputIcon("price_spent", info_icon("Price per Spent Hen"), value = NULL, min=0, max=10, step=.5, icon = icon("dollar", verify_fa=F)))
             ),
             fluidRow(
-                column(6, numericInputIcon("price_manure", "Price from Manure from Spent Hens", value = NULL, min=0, max=10, step=.5, icon = icon("dollar", verify_fa=F)))
+                column(6, numericInputIcon("price_manure", info_icon("Price from Manure from Spent Hens"), value = NULL, min=0, max=10, step=.5, icon = icon("dollar", verify_fa=F)))
             ),
 
             h3("Variable Yearly Costs"),
             fluidRow(
-                column(6, numericInputIcon("cost_feed", "Feed", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F))),
-                column(6, numericInputIcon("cost_labor", "Labour", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)))
+                column(6, numericInputIcon("cost_feed", info_icon("Feed"), value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F))),
+                column(6, numericInputIcon("cost_labor", info_icon("Labour"), value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)))
             ),
             fluidRow(
-                column(6, numericInputIcon("cost_pullet", "Pullets\n\n", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F))),
-                column(6, numericInputIcon("cost_equip", "Equipment & Maintenance", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)))
+                column(6, numericInputIcon("cost_pullet", info_icon("Pullets"), value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F))),
+                column(6, numericInputIcon("cost_equip", info_icon("Equipment & Maintenance"), value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)))
             ),
             fluidRow(
-                column(6, numericInputIcon("cost_litter", "Litter", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F))),
-                column(6, numericInputIcon("cost_vet", "Vaccinations/Veterinary Care", value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)))
+                column(6, numericInputIcon("cost_litter", info_icon("Litter"), value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F))),
+                column(6, numericInputIcon("cost_vet", info_icon("Vaccinations/Veterinary Care"), value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)))
             ),
             
             h3("Fixed Yearly Costs"),
             fluidRow(
-                column(6, numericInputIcon("cost_land", "Land", value = NULL, min=0, max=50000, step=.5, icon = icon("dollar", verify_fa=F))),
-                column(6, numericInputIcon("cost_office", "Office Rental", value = NULL, min=0, max=50000, step=.5, icon = icon("dollar", verify_fa=F)))
+                column(6, numericInputIcon("cost_land", info_icon("Land"), value = NULL, min=0, max=50000, step=.5, icon = icon("dollar", verify_fa=F))),
+                column(6, numericInputIcon("cost_office", info_icon("Office Rental"), value = NULL, min=0, max=50000, step=.5, icon = icon("dollar", verify_fa=F)))
             )
         ),
         
@@ -173,7 +175,7 @@ server <- function(input, output, session) {
     
     totals = reactive(fc() %>% select(year, cost_total, revenue_total, profit) %>% setNames(c("Year", "Total Cost", "Total Revenue", "Total Profit")))
     output$t_totals = renderReactable(reactable(totals() %>% mutate(across(2:4, scales::comma))))
-    output$g_totals = renderPlotly(pl(totals(), ylabel="Cost/Revenue/Profit"))
+    output$g_totals = renderPlotly(pl(totals(), ylabel="Total Cost/Revenue/Profit"))
     # output$g_totals = renderPlotly(
     #     totals() %>%
     #         pivot_longer(cols = 2:4) %>%
