@@ -8,6 +8,13 @@ options(scipen = 999)
 
 `%,%` = function(a,b) paste0(a,b)
 
+blurbs = list(
+    num_years = "blah blah blah",
+    country = "blah blah blah",
+    flock_size = "blah blah blah",
+    mortality = "blah blah blah"
+)
+
 countries_all = read_excel("www/countries.xlsx", sheet="countries")
 countries = c("", countries_all$country)
 flags = c("", countries_all$symbol)
@@ -55,13 +62,13 @@ ui <- fluidPage(
         
         # Sidebar to demonstrate various slider options
         sidebarPanel(
-            sliderInput("num_years", label=info_icon("Number of Years to Forecast"), value = 10, min=1, max=50, step=1),
-            pickerInput("country", info_icon("Your Country"), multiple = F, choices = countries, choicesOpt = list(content = mapply(countries, flags, FUN = function(country, flagUrl) {HTML(paste(tags$img(src=flagUrl, width=20, height=15), country))}, SIMPLIFY = FALSE, USE.NAMES = FALSE))),
+            sliderInput("num_years", label=info_icon("Number of Years to Forecast", blurbs$num_years), value = 10, min=1, max=50, step=1),
+            pickerInput("country", info_icon("Your Country", blurbs$country), multiple = F, choices = countries, choicesOpt = list(content = mapply(countries, flags, FUN = function(country, flagUrl) {HTML(paste(tags$img(src=flagUrl, width=20, height=15), country))}, SIMPLIFY = FALSE, USE.NAMES = FALSE))),
             
             h3("Basic Statistics"),
             fluidRow(
-                column(6, numericInput("flock_size", info_icon("Initial Size of the Flock"), value = NULL, min=0, step=1000)),
-                column(6, numericInputIcon("mortality", info_icon("Mortality Rate"), value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))))),
+                column(6, numericInput("flock_size", info_icon("Initial Size of the Flock", blurbs$flock_size), value = NULL, min=0, step=1000)),
+                column(6, numericInputIcon("mortality", info_icon("Mortality Rate", blurbs$mortality), value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))))),
             fluidRow(
                 column(6, numericInputIcon("growth", info_icon("Growth Rate of the Flock"), value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent")))),
                 column(6, numericInputIcon("perc_laying", info_icon("Percentage of Flock that Lays Eggs"), value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))))),
