@@ -1,3 +1,14 @@
+num_years = 10
+period_length = 14
+transition_length = 2
+
+tibble(year = 1:num_years) %>%
+    crossing(period = 1:(period_length + transition_length)) %>%
+    mutate(is_transition = period > period_length) %>%
+    print(n=20)
+
+
+
 library(shiny)
 library(shinyWidgets)
 library(plotly)
