@@ -105,18 +105,22 @@ ui <- fluidPage(
                 tabsetPanel(
                     tabPanel("Monthly Table",
                              p("Note: we will delete this table in the final product"),
+                             downloadButton("d_monthly", "Download Data"),
                              reactableOutput("t_monthly")),
                     
                     tabPanel("Revenues",
                              plotlyOutput("g_revenue"),
+                             downloadButton("d_revenue", "Download Data"),
                              reactableOutput("t_revenue")),
                     
                     tabPanel("Costs",
                              plotlyOutput("g_cost"),
+                             downloadButton("d_cost", "Download Data"),
                              reactableOutput("t_cost")),
                     
                     tabPanel("Profits",
                              plotlyOutput("g_profit"),
+                             downloadButton("d_profit", "Download Data"),
                              reactableOutput("t_profit")))))
     )
 )
@@ -157,6 +161,7 @@ server <- function(input, output, session) {
             ) %>%
             ungroup()})
     output$t_monthly = renderReactable(reactable(monthly(), defaultPageSize = 30, highlight = T))
+    output$d_monthly = downloadHandler(filename = "monthly_data.csv", content = function(file) write.csv(monthly(), file, row.names = FALSE))
     
     yearly = reactive({
         monthly() %>%
@@ -167,7 +172,7 @@ server <- function(input, output, session) {
                 cost_land = input$cost_land,
                 cost_office = input$cost_office,
                 revenue_total = revenue_eggs + revenue_spent + revenue_manure,
-                variable_cost_total = cost_feed, cost_labor, cost_equip, cost_litter, cost_vet,
+                variable_cost_total = cost_feed + cost_labor + cost_equip + cost_litter + cost_vet,
                 fixed_cost_total = cost_land + cost_office,
                 cost_total = variable_cost_total + fixed_cost_total,
                 profit = revenue_total - cost_total
@@ -176,29 +181,17 @@ server <- function(input, output, session) {
     revenue = reactive(yearly() %>% select(year, revenue_eggs, revenue_spent, revenue_manure, revenue_total) %>% setNames(c("Year", "Eggs", "Spent Hens", "Manure", "Total Revenue")))
     output$t_revenue = renderReactable(reactable(revenue() %>% mutate(across(2:5, scales::comma)), highlight=T))
     output$g_revenue = renderPlotly(pl(revenue() %>% select(-`Total Revenue`), ylabel="Revenue"))
+    output$d_revenue = downloadHandler(filename = "revenue_data.csv", content = function(file) write.csv(revenue(), file, row.names = FALSE))
     
     cost = reactive(yearly() %>% select(year, starts_with("cost_")) %>% setNames(c("Year", "Feed", "Labor", "Equipment", "Litter", "Veterinarian/Vaccine", "Land", "Office", "Total Cost")))
     output$t_cost = renderReactable(reactable(cost() %>% mutate(across(2:8, scales::comma)), highlight=T))
     output$g_cost = renderPlotly(pl(cost() %>% select(-`Total Cost`), ylabel="Cost"))
+    output$d_cost = downloadHandler(filename = "cost_data.csv", content = function(file) write.csv(cost(), file, row.names = FALSE))
     
     profit = reactive(yearly() %>% select(year, cost_total, revenue_total, profit) %>% setNames(c("Year", "Total Cost", "Total Revenue", "Total Profit")))
     output$t_profit = renderReactable(reactable(profit() %>% mutate(across(2:4, scales::comma)), highlight=T))
     output$g_profit = renderPlotly(pl(profit(), ylabel="Total Cost/Revenue/Profit"))
-
-    
-    
-    # output$g_totals = renderPlotly(
-    #     totals() %>%
-    #         pivot_longer(cols = 2:4) %>%
-    #         ggplot() +
-    #         theme_light() +
-    #         aes(x=`Year`, y=value, color=name) +
-    #         geom_line() + geom_point() +
-    #         geom_ribbon(aes(ymax=value*1.05, ymin=value*.95, alpha=.1, fill=name)) +
-    #         scale_x_continuous(breaks=totals()$`Year`) +
-    #         scale_y_continuous(labels = scales::comma) +
-    #         labs(y=NULL, color=NULL)
-    # )
+    output$d_profit = downloadHandler(filename = "profit_data.csv", content = function(file) write.csv(profit(), file, row.names = FALSE))
 
 }
 # Run the application
