@@ -76,9 +76,9 @@ ui <- fluidPage(
             h3("Basic Statistics"),
             numericInput("flock_size", info_icon("Initial Size of the Flock", blurbs$flock_size), value = NULL, min=0, step=1000),
             numericInputIcon("mortality", info_icon("Mortality Rate", blurbs$mortality), value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))),
-            numericInputIcon("period_length", info_icon("Period Length for Hens to Lay (Months)"), value = 14, min=0, max=20, step=1),
-            numericInputIcon("transition_length", info_icon("Delay Between Selling and Buying New Hens  (Months)"), value = 2, min=0, max=20, step=1),
-            numericInputIcon("new_hens", info_icon("Number of Hens Purchased Each Period"), value = 5000, min=0, step=1000),
+            numericInputIcon("period_length", info_icon("Period Length for Hens to Lay (Months)"), value = NULL, min=0, max=20, step=1),
+            numericInputIcon("transition_length", info_icon("Delay Between Selling and Buying New Hens  (Months)"), value = NULL, min=0, max=20, step=1),
+            numericInputIcon("new_hens", info_icon("Number of Hens Purchased Each Period"), value = NULL, min=0, step=1000),
             numericInputIcon("breakage", info_icon("Percentage of Eggs that Break"), value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))),
             
             h3("Revenues"),
@@ -89,7 +89,7 @@ ui <- fluidPage(
             h3("Variable Yearly Costs"),
                 numericInputIcon("cost_feed", info_icon("Feed"), value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
                 numericInputIcon("cost_labor", info_icon("Labour"), value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
-                numericInputIcon("cost_pullet", info_icon("Pullets"), value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
+                #numericInputIcon("cost_pullet", info_icon("Pullets"), value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
                 numericInputIcon("cost_equip", info_icon("Equipment & Maintenance"), value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
                 numericInputIcon("cost_litter", info_icon("Litter"), value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
                 numericInputIcon("cost_vet", info_icon("Vaccinations/Veterinary Care"), value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
@@ -107,24 +107,17 @@ ui <- fluidPage(
                              p("Note: we will delete this table in the final product"),
                              reactableOutput("t_monthly")),
                     
-                    tabPanel("Flock",
-                             plotlyOutput("g_flock"),
-                             reactableOutput("t_flock")),
-                    
-                    tabPanel("Eggs",
-                             plotlyOutput("g_eggs"),
-                             reactableOutput("t_eggs")),
-                    
                     tabPanel("Revenues",
-                             plotlyOutput("g_revenues"),
-                             reactableOutput("t_revenues")),
+                             plotlyOutput("g_revenue"),
+                             reactableOutput("t_revenue")),
                     
-                    tabPanel("Totals",
-                             plotlyOutput("g_totals"),
-                             reactableOutput("t_totals"))
-                )
-            )
-        )
+                    tabPanel("Costs",
+                             plotlyOutput("g_cost"),
+                             reactableOutput("t_cost")),
+                    
+                    tabPanel("Profits",
+                             plotlyOutput("g_profit"),
+                             reactableOutput("t_profit")))))
     )
 )
 
@@ -140,7 +133,7 @@ server <- function(input, output, session) {
     
     survival = reactive({(1 - input$mortality / 100) ^ (1/(input$period_length - 1))})
     monthly = reactive({
-        tibble(month = 1:(12 * (input$num_years+1))) %>%
+        tibble(month = 1:(12 * (input$num_years))) %>%
             mutate(
                 year = ceiling(month / 12),
                 period = ceiling(month / input$period_length),
@@ -155,53 +148,45 @@ server <- function(input, output, session) {
                 num_eggs = num_hens * (1 - input$breakage / 100),
                 revenue_eggs = num_eggs * input$price_egg,
                 revenue_spent = case_when(period_rank == input$period_length + 1 ~ lag(num_hens) * input$price_spent, T ~ 0),
-                revenue_manure = case_when(period_rank == input$period_length + 1 ~ as.double(input$revenue_manure), T ~ 0.0)
+                revenue_manure = case_when(period_rank == input$period_length + 1 ~ as.double(input$revenue_manure), T ~ 0.0),
+                cost_feed = num_hens * input$cost_feed,
+                cost_labor = num_hens * input$cost_labor,
+                cost_equip = num_hens * input$cost_equip,
+                cost_litter = num_hens * input$cost_litter,
+                cost_vet = num_hens * input$cost_vet
+            ) %>%
+            ungroup()})
+    output$t_monthly = renderReactable(reactable(monthly(), defaultPageSize = 30, highlight = T))
+    
+    yearly = reactive({
+        monthly() %>%
+            group_by(year) %>%
+            summarise_at(c("revenue_eggs", "revenue_spent", "revenue_manure", "cost_feed", "cost_labor", "cost_equip", "cost_litter", "cost_vet"), sum) %>%
+            ungroup() %>%
+            mutate(
+                cost_land = input$cost_land,
+                cost_office = input$cost_office,
+                revenue_total = revenue_eggs + revenue_spent + revenue_manure,
+                variable_cost_total = cost_feed, cost_labor, cost_equip, cost_litter, cost_vet,
+                fixed_cost_total = cost_land + cost_office,
+                cost_total = variable_cost_total + fixed_cost_total,
+                profit = revenue_total - cost_total
             )})
+        
+    revenue = reactive(yearly() %>% select(year, revenue_eggs, revenue_spent, revenue_manure, revenue_total) %>% setNames(c("Year", "Eggs", "Spent Hens", "Manure", "Total Revenue")))
+    output$t_revenue = renderReactable(reactable(revenue() %>% mutate(across(2:5, scales::comma)), highlight=T))
+    output$g_revenue = renderPlotly(pl(revenue() %>% select(-`Total Revenue`), ylabel="Revenue"))
     
-    output$t_monthly = renderReactable(reactable(monthly(), defaultPageSize = 30))
+    cost = reactive(yearly() %>% select(year, starts_with("cost_")) %>% setNames(c("Year", "Feed", "Labor", "Equipment", "Litter", "Veterinarian/Vaccine", "Land", "Office", "Total Cost")))
+    output$t_cost = renderReactable(reactable(cost() %>% mutate(across(2:8, scales::comma)), highlight=T))
+    output$g_cost = renderPlotly(pl(cost() %>% select(-`Total Cost`), ylabel="Cost"))
     
-    fc = reactive({
-        tibble(
-            year = 1:input$num_years,
-            flock_size = as.integer(input$flock_size * (1 + input$growth/100 - input$mortality/100) ^ year),
-            viable_hens = flock_size * input$perc_laying/100,
-            spent_hens = flock_size - viable_hens,
-            num_eggs = as.integer(flock_size * input$perc_laying/100 * input$eggs_laid),
-            broken_eggs = as.integer(num_eggs * input$breakage/100),
-            viable_eggs = num_eggs - broken_eggs,
-            revenue_eggs = viable_eggs * input$price_egg,
-            revenue_spent = viable_eggs * input$price_spent,
-            revenue_manure = viable_eggs * input$revenue_manure,
-            revenue_total = revenue_eggs + revenue_spent + revenue_manure,
-            cost_feed = flock_size * input$cost_feed,
-            cost_labor = flock_size * input$cost_labor,
-            cost_pullet = flock_size * input$cost_pullet,
-            cost_equip = flock_size * input$cost_equip,
-            cost_litter = flock_size * input$cost_litter,
-            cost_vet = flock_size * input$cost_vet,
-            cost_variable_total = cost_feed + cost_labor + cost_pullet + cost_equip + cost_litter + cost_vet,
-            cost_land = input$cost_land,
-            cost_office = input$cost_office,
-            cost_fixed_total = cost_land + cost_office,
-            cost_total = cost_variable_total + cost_fixed_total,
-            profit = revenue_total - cost_total
-        )})
+    profit = reactive(yearly() %>% select(year, cost_total, revenue_total, profit) %>% setNames(c("Year", "Total Cost", "Total Revenue", "Total Profit")))
+    output$t_profit = renderReactable(reactable(profit() %>% mutate(across(2:4, scales::comma)), highlight=T))
+    output$g_profit = renderPlotly(pl(profit(), ylabel="Total Cost/Revenue/Profit"))
+
     
-    flock = reactive(fc() %>% select(year, flock_size, viable_hens, spent_hens) %>% setNames(c("Year", "Flock Size", "Viable Hens", "Spent Hens")))
-    output$t_flock = renderReactable(reactable(flock() %>% mutate(across(2:4, scales::comma))))
-    output$g_flock = renderPlotly(pl(flock(), ylabel="Number of Birds"))
     
-    eggs = reactive(fc() %>% select(year, num_eggs, viable_eggs, broken_eggs) %>% setNames(c("Year", "Number of Eggs", "Viable Eggs", "Broken Eggs")))
-    output$t_eggs = renderReactable(reactable(eggs() %>% mutate(across(2:4, scales::comma))))
-    output$g_eggs = renderPlotly(pl(eggs(), ylabel="Number of Eggs"))
-    
-    revenues = reactive(fc() %>% select(year, starts_with("revenue")) %>% setNames(c("Year", "Eggs", "Spent Hens", "Manure", "Total")))
-    output$t_revenues = renderReactable(reactable(revenues() %>% mutate(across(2:5, scales::comma))))
-    output$g_revenues = renderPlotly(pl(revenues(), ylabel="Revenues"))
-    
-    totals = reactive(fc() %>% select(year, cost_total, revenue_total, profit) %>% setNames(c("Year", "Total Cost", "Total Revenue", "Total Profit")))
-    output$t_totals = renderReactable(reactable(totals() %>% mutate(across(2:4, scales::comma))))
-    output$g_totals = renderPlotly(pl(totals(), ylabel="Total Cost/Revenue/Profit"))
     # output$g_totals = renderPlotly(
     #     totals() %>%
     #         pivot_longer(cols = 2:4) %>%
@@ -214,7 +199,7 @@ server <- function(input, output, session) {
     #         scale_y_continuous(labels = scales::comma) +
     #         labs(y=NULL, color=NULL)
     # )
-}
 
+}
 # Run the application
 shinyApp(ui = ui, server = server)
