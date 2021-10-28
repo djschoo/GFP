@@ -71,50 +71,32 @@ ui <- fluidPage(
         # Sidebar to demonstrate various slider options
         sidebarPanel(
             sliderInput("num_years", label=info_icon("Number of Years to Forecast", blurbs$num_years), value = 10, min=1, max=50, step=1),
-            pickerInput("country", selected=NULL, info_icon("Your Country", blurbs$country), multiple = F, choices = countries, choicesOpt = list(content = mapply(countries, flags, FUN = function(country, flagUrl) {HTML(paste(tags$img(src=flagUrl, width=20, height=15), country))}, SIMPLIFY = FALSE, USE.NAMES = FALSE))),
+            pickerInput("country", selected="China", info_icon("Your Country", blurbs$country), multiple = F, choices = countries, choicesOpt = list(content = mapply(countries, flags, FUN = function(country, flagUrl) {HTML(paste(tags$img(src=flagUrl, width=20, height=15), country))}, SIMPLIFY = FALSE, USE.NAMES = FALSE))),
             
             h3("Basic Statistics"),
-            fluidRow(
-                column(6, numericInput("flock_size", info_icon("Initial Size of the Flock", blurbs$flock_size), value = NULL, min=0, step=1000)),
-                column(6, numericInputIcon("mortality", info_icon("Mortality Rate", blurbs$mortality), value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))))),
-            fluidRow(
-                column(6, numericInputIcon("period_length", info_icon("Period Length for Hens to Lay (Months)"), value = 14, min=0, max=20, step=1)),
-                column(6, numericInputIcon("transition_length", info_icon("Delay Between Selling and Buying New Hens  (Months)"), value = 2, min=0, max=20, step=1))),
-            #column(6, numericInputIcon("perc_laying", info_icon("Percentage of Flock that Lays Eggs"), value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))))),
-            fluidRow(
-                #column(6, numericInput("eggs_laid", info_icon("Average Number of Eggs Laid per Bird"), value = NULL, min=0, step=1000)),
-                column(6, numericInputIcon("new_hens", info_icon("Number of Hens Purchased Each Period"), value = 5000, min=0, step=1000)),
-                column(6, numericInputIcon("breakage", info_icon("Percentage of Eggs that Break"), value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))))),
+            numericInput("flock_size", info_icon("Initial Size of the Flock", blurbs$flock_size), value = NULL, min=0, step=1000),
+            numericInputIcon("mortality", info_icon("Mortality Rate", blurbs$mortality), value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))),
+            numericInputIcon("period_length", info_icon("Period Length for Hens to Lay (Months)"), value = 14, min=0, max=20, step=1),
+            numericInputIcon("transition_length", info_icon("Delay Between Selling and Buying New Hens  (Months)"), value = 2, min=0, max=20, step=1),
+            numericInputIcon("new_hens", info_icon("Number of Hens Purchased Each Period"), value = 5000, min=0, step=1000),
+            numericInputIcon("breakage", info_icon("Percentage of Eggs that Break"), value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))),
             
             h3("Revenues"),
-            fluidRow(
-                column(6, numericInputIcon("price_egg", info_icon("Selling Price per Egg"), value = NULL, min=0, max=10, step=.5, icon = icon("dollar", verify_fa=F))),
-                column(6, numericInputIcon("price_spent", info_icon("Price per Spent Hen"), value = NULL, min=0, max=10, step=.5, icon = icon("dollar", verify_fa=F)))
-            ),
-            fluidRow(
-                column(6, numericInputIcon("revenue_manure", info_icon("Revenue from Manure per Period"), value = NULL, min=0, max=10, step=.5, icon = icon("dollar", verify_fa=F)))
-            ),
+            numericInputIcon("price_egg", info_icon("Selling Price per Egg"), value = NULL, min=0, max=10, step=.5, icon = icon("dollar", verify_fa=F)),
+            numericInputIcon("price_spent", info_icon("Price per Spent Hen"), value = NULL, min=0, max=10, step=.5, icon = icon("dollar", verify_fa=F)),
+            numericInputIcon("revenue_manure", info_icon("Revenue from Manure per Period"), value = NULL, min=0L, step=1, icon = icon("dollar", verify_fa=F)),
             
             h3("Variable Yearly Costs"),
-            fluidRow(
-                column(6, numericInputIcon("cost_feed", info_icon("Feed"), value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F))),
-                column(6, numericInputIcon("cost_labor", info_icon("Labour"), value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)))
-            ),
-            fluidRow(
-                column(6, numericInputIcon("cost_pullet", info_icon("Pullets"), value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F))),
-                column(6, numericInputIcon("cost_equip", info_icon("Equipment & Maintenance"), value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)))
-            ),
-            fluidRow(
-                column(6, numericInputIcon("cost_litter", info_icon("Litter"), value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F))),
-                column(6, numericInputIcon("cost_vet", info_icon("Vaccinations/Veterinary Care"), value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)))
-            ),
+                numericInputIcon("cost_feed", info_icon("Feed"), value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
+                numericInputIcon("cost_labor", info_icon("Labour"), value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
+                numericInputIcon("cost_pullet", info_icon("Pullets"), value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
+                numericInputIcon("cost_equip", info_icon("Equipment & Maintenance"), value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
+                numericInputIcon("cost_litter", info_icon("Litter"), value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
+                numericInputIcon("cost_vet", info_icon("Vaccinations/Veterinary Care"), value = NULL, min=0, max=5000, step=.5, icon = icon("dollar", verify_fa=F)),
             
             h3("Fixed Yearly Costs"),
-            fluidRow(
-                column(6, numericInputIcon("cost_land", info_icon("Land"), value = NULL, min=0, max=50000, step=.5, icon = icon("dollar", verify_fa=F))),
-                column(6, numericInputIcon("cost_office", info_icon("Office Rental"), value = NULL, min=0, max=50000, step=.5, icon = icon("dollar", verify_fa=F)))
-            )
-        ),
+            numericInputIcon("cost_land", info_icon("Land"), value = NULL, min=0, max=50000, step=.5, icon = icon("dollar", verify_fa=F)),
+            numericInputIcon("cost_office", info_icon("Office Rental"), value = NULL, min=0, max=50000, step=.5, icon = icon("dollar", verify_fa=F))),
         
         # Main panel for displaying outputs
         mainPanel(
@@ -157,7 +139,6 @@ server <- function(input, output, session) {
     })
     
     survival = reactive({(1 - input$mortality / 100) ^ (1/(input$period_length - 1))})
-    
     monthly = reactive({
         tibble(month = 1:(12 * (input$num_years+1))) %>%
             mutate(
@@ -170,9 +151,12 @@ server <- function(input, output, session) {
                     month == 1 ~ num_hens,
                     period_rank == 1 ~ as.double(input$new_hens),
                     is_transition ~ 0.0),
-                    num_hens = calc_hens(num_hens, survival())
+                    num_hens = calc_hens(num_hens, survival()),
+                num_eggs = num_hens * (1 - input$breakage / 100),
+                revenue_eggs = num_eggs * input$price_egg,
+                revenue_spent = case_when(period_rank == input$period_length + 1 ~ lag(num_hens) * input$price_spent, T ~ 0),
+                revenue_manure = case_when(period_rank == input$period_length + 1 ~ as.double(input$revenue_manure), T ~ 0.0)
             )})
-    
     
     output$t_monthly = renderReactable(reactable(monthly(), defaultPageSize = 30))
     
