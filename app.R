@@ -8,6 +8,14 @@ options(scipen = 999)
 
 `%,%` = function(a,b) paste0(a,b)
 
+calc_hens = function(v, p) {
+  t = v[1]
+  for (i in 1:length(v)) {
+    if (is.na(v[i])) t[i] = t[i-1] * p else t[i] = v[i]
+  }
+  return(t)
+}
+
 blurbs = list(
     num_years = "blah blah blah",
     country = "blah blah blah",
@@ -63,7 +71,7 @@ ui <- fluidPage(
         # Sidebar to demonstrate various slider options
         sidebarPanel(
             sliderInput("num_years", label=info_icon("Number of Years to Forecast", blurbs$num_years), value = 10, min=1, max=50, step=1),
-            pickerInput("country", selected="China", info_icon("Your Country", blurbs$country), multiple = F, choices = countries, choicesOpt = list(content = mapply(countries, flags, FUN = function(country, flagUrl) {HTML(paste(tags$img(src=flagUrl, width=20, height=15), country))}, SIMPLIFY = FALSE, USE.NAMES = FALSE))),
+            pickerInput("country", selected=NULL, info_icon("Your Country", blurbs$country), multiple = F, choices = countries, choicesOpt = list(content = mapply(countries, flags, FUN = function(country, flagUrl) {HTML(paste(tags$img(src=flagUrl, width=20, height=15), country))}, SIMPLIFY = FALSE, USE.NAMES = FALSE))),
             
             h3("Basic Statistics"),
             fluidRow(
@@ -161,9 +169,10 @@ server <- function(input, output, session) {
                 num_hens = case_when(
                     month == 1 ~ num_hens,
                     period_rank == 1 ~ as.double(input$new_hens),
-                    is_transition ~ 0.0,
-                    T ~ survival() * lag(num_hens))
+                    is_transition ~ 0.0),
+                    num_hens = calc_hens(num_hens, survival())
             )})
+    
     
     output$t_monthly = renderReactable(reactable(monthly(), defaultPageSize = 30))
     
