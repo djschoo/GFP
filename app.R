@@ -71,7 +71,7 @@ ui <- fluidPage(
         # Sidebar to demonstrate various slider options
         sidebarPanel(
             sliderInput("num_years", label=info_icon("Number of Years to Forecast", blurbs$num_years), value = 10, min=1, max=50, step=1),
-            pickerInput("country", selected="China", info_icon("Your Country", blurbs$country), multiple = F, choices = countries, choicesOpt = list(content = mapply(countries, flags, FUN = function(country, flagUrl) {HTML(paste(tags$img(src=flagUrl, width=20, height=15), country))}, SIMPLIFY = FALSE, USE.NAMES = FALSE))),
+            pickerInput("country", selected=NULL, info_icon("Your Country", blurbs$country), multiple = F, choices = countries, choicesOpt = list(content = mapply(countries, flags, FUN = function(country, flagUrl) {HTML(paste(tags$img(src=flagUrl, width=20, height=15), country))}, SIMPLIFY = FALSE, USE.NAMES = FALSE))),
             
             h3("Basic Statistics"),
             numericInput("flock_size", info_icon("Initial Size of the Flock", blurbs$flock_size), value = NULL, min=0, step=1000),
@@ -127,72 +127,71 @@ ui <- fluidPage(
 
 # Define server logic
 server <- function(input, output, session) {
-    
-    defaults = reactive(defaults_all %>% filter(country == input$country))
-    
-    # can we do this in one line?
-    observeEvent(input$country, {for (var in event_vars) updateNumericInput(session, inputId = var, value = filter(defaults(), variable==var) %>% pull(value))})
-    observeEvent(input$country, {for (var in currency_vars) updateNumericInputIcon(session, inputId = var, icon = currencies[match(input$country, countries)])
-    })
-    
-    survival = reactive({(1 - input$mortality / 100) ^ (1/(input$period_length - 1))})
-    monthly = reactive({
-        tibble(month = 1:(12 * (input$num_years))) %>%
-            mutate(
-                year = ceiling(month / 12),
-                period = ceiling(month / input$period_length),
-                period_rank = (month - 1) %% (input$period_length + input$transition_length) + 1,
-                is_transition = period_rank > input$period_length,
-                num_hens = as.double(input$flock_size),
-                num_hens = case_when(
-                    month == 1 ~ num_hens,
-                    period_rank == 1 ~ as.double(input$new_hens),
-                    is_transition ~ 0.0),
-                    num_hens = calc_hens(num_hens, survival()),
-                num_eggs = num_hens * (1 - input$breakage / 100),
-                revenue_eggs = num_eggs * input$price_egg,
-                revenue_spent = case_when(period_rank == input$period_length + 1 ~ lag(num_hens) * input$price_spent, T ~ 0),
-                revenue_manure = case_when(period_rank == input$period_length + 1 ~ as.double(input$revenue_manure), T ~ 0.0),
-                cost_feed = num_hens * input$cost_feed,
-                cost_labor = num_hens * input$cost_labor,
-                cost_equip = num_hens * input$cost_equip,
-                cost_litter = num_hens * input$cost_litter,
-                cost_vet = num_hens * input$cost_vet
-            ) %>%
-            ungroup()})
-    output$t_monthly = renderReactable(reactable(monthly(), defaultPageSize = 30, highlight = T))
-    output$d_monthly = downloadHandler(filename = "monthly_data.csv", content = function(file) write.csv(monthly(), file, row.names = FALSE))
-    
-    yearly = reactive({
-        monthly() %>%
-            group_by(year) %>%
-            summarise_at(c("revenue_eggs", "revenue_spent", "revenue_manure", "cost_feed", "cost_labor", "cost_equip", "cost_litter", "cost_vet"), sum) %>%
-            ungroup() %>%
-            mutate(
-                cost_land = input$cost_land,
-                cost_office = input$cost_office,
-                revenue_total = revenue_eggs + revenue_spent + revenue_manure,
-                variable_cost_total = cost_feed + cost_labor + cost_equip + cost_litter + cost_vet,
-                fixed_cost_total = cost_land + cost_office,
-                cost_total = variable_cost_total + fixed_cost_total,
-                profit = revenue_total - cost_total
-            )})
-        
-    revenue = reactive(yearly() %>% select(year, revenue_eggs, revenue_spent, revenue_manure, revenue_total) %>% setNames(c("Year", "Eggs", "Spent Hens", "Manure", "Total Revenue")))
-    output$t_revenue = renderReactable(reactable(revenue() %>% mutate(across(2:5, scales::comma)), highlight=T))
-    output$g_revenue = renderPlotly(pl(revenue() %>% select(-`Total Revenue`), ylabel="Revenue"))
-    output$d_revenue = downloadHandler(filename = "revenue_data.csv", content = function(file) write.csv(revenue(), file, row.names = FALSE))
-    
-    cost = reactive(yearly() %>% select(year, starts_with("cost_")) %>% setNames(c("Year", "Feed", "Labor", "Equipment", "Litter", "Veterinarian/Vaccine", "Land", "Office", "Total Cost")))
-    output$t_cost = renderReactable(reactable(cost() %>% mutate(across(2:8, scales::comma)), highlight=T))
-    output$g_cost = renderPlotly(pl(cost() %>% select(-`Total Cost`), ylabel="Cost"))
-    output$d_cost = downloadHandler(filename = "cost_data.csv", content = function(file) write.csv(cost(), file, row.names = FALSE))
-    
-    profit = reactive(yearly() %>% select(year, cost_total, revenue_total, profit) %>% setNames(c("Year", "Total Cost", "Total Revenue", "Total Profit")))
-    output$t_profit = renderReactable(reactable(profit() %>% mutate(across(2:4, scales::comma)), highlight=T))
-    output$g_profit = renderPlotly(pl(profit(), ylabel="Total Cost/Revenue/Profit"))
-    output$d_profit = downloadHandler(filename = "profit_data.csv", content = function(file) write.csv(profit(), file, row.names = FALSE))
 
+        defaults = reactive(defaults_all %>% filter(country == input$country))
+        
+        observeEvent(input$country, {for (var in event_vars) updateNumericInput(session, inputId = var, value = NULL)})
+        observeEvent(input$country, {for (var in event_vars) updateNumericInput(session, inputId = var, value = filter(defaults(), variable==var) %>% pull(value))})
+        observeEvent(input$country, {for (var in currency_vars) updateNumericInputIcon(session, inputId = var, icon = currencies[match(input$country, countries)])})
+        
+        survival = reactive({(1 - input$mortality / 100) ^ (1/(input$period_length - 1))})
+        monthly = reactive({
+            tibble(month = 1:(12 * (input$num_years))) %>%
+                mutate(
+                    year = ceiling(month / 12),
+                    period = ceiling(month / input$period_length),
+                    period_rank = (month - 1) %% (input$period_length + input$transition_length) + 1,
+                    is_transition = period_rank > input$period_length,
+                    num_hens = as.double(input$flock_size),
+                    num_hens = case_when(
+                        month == 1 ~ num_hens,
+                        period_rank == 1 ~ as.double(input$new_hens),
+                        is_transition ~ 0.0),
+                        num_hens = calc_hens(num_hens, survival()),
+                    num_eggs = num_hens * (1 - input$breakage / 100),
+                    revenue_eggs = num_eggs * input$price_egg,
+                    revenue_spent = case_when(period_rank == input$period_length + 1 ~ lag(num_hens) * input$price_spent, T ~ 0),
+                    revenue_manure = case_when(period_rank == input$period_length + 1 ~ as.double(input$revenue_manure), T ~ 0.0),
+                    cost_feed = num_hens * input$cost_feed,
+                    cost_labor = num_hens * input$cost_labor,
+                    cost_equip = num_hens * input$cost_equip,
+                    cost_litter = num_hens * input$cost_litter,
+                    cost_vet = num_hens * input$cost_vet
+                ) %>%
+                ungroup()})
+        output$t_monthly = renderReactable(reactable(monthly(), defaultPageSize = 30, highlight = T))
+        output$d_monthly = downloadHandler(filename = "monthly_data.csv", content = function(file) write.csv(monthly(), file, row.names = FALSE))
+        
+        yearly = reactive({
+            monthly() %>%
+                group_by(year) %>%
+                summarise_at(c("revenue_eggs", "revenue_spent", "revenue_manure", "cost_feed", "cost_labor", "cost_equip", "cost_litter", "cost_vet"), sum) %>%
+                ungroup() %>%
+                mutate(
+                    cost_land = input$cost_land,
+                    cost_office = input$cost_office,
+                    revenue_total = revenue_eggs + revenue_spent + revenue_manure,
+                    variable_cost_total = cost_feed + cost_labor + cost_equip + cost_litter + cost_vet,
+                    fixed_cost_total = cost_land + cost_office,
+                    cost_total = variable_cost_total + fixed_cost_total,
+                    profit = revenue_total - cost_total
+                )})
+            
+        revenue = reactive(yearly() %>% select(year, revenue_eggs, revenue_spent, revenue_manure, revenue_total) %>% setNames(c("Year", "Eggs", "Spent Hens", "Manure", "Total Revenue")))
+        output$t_revenue = renderReactable(reactable(revenue() %>% mutate(across(2:5, scales::comma)), highlight=T))
+        output$g_revenue = renderPlotly(pl(revenue() %>% select(-`Total Revenue`), ylabel="Revenue"))
+        output$d_revenue = downloadHandler(filename = "revenue_data.csv", content = function(file) write.csv(revenue(), file, row.names = FALSE))
+        
+        cost = reactive(yearly() %>% select(year, starts_with("cost_")) %>% setNames(c("Year", "Feed", "Labor", "Equipment", "Litter", "Veterinarian/Vaccine", "Land", "Office", "Total Cost")))
+        output$t_cost = renderReactable(reactable(cost() %>% mutate(across(2:8, scales::comma)), highlight=T))
+        output$g_cost = renderPlotly(pl(cost() %>% select(-`Total Cost`), ylabel="Cost"))
+        output$d_cost = downloadHandler(filename = "cost_data.csv", content = function(file) write.csv(cost(), file, row.names = FALSE))
+        
+        profit = reactive(yearly() %>% select(year, cost_total, revenue_total, profit) %>% setNames(c("Year", "Total Cost", "Total Revenue", "Total Profit")))
+        output$t_profit = renderReactable(reactable(profit() %>% mutate(across(2:4, scales::comma)), highlight=T))
+        output$g_profit = renderPlotly(pl(profit(), ylabel="Total Cost/Revenue/Profit"))
+        output$d_profit = downloadHandler(filename = "profit_data.csv", content = function(file) write.csv(profit(), file, row.names = FALSE))
 }
+
 # Run the application
 shinyApp(ui = ui, server = server)
