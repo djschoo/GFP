@@ -77,7 +77,7 @@ ui <- fluidPage(
             numericInput("flock_size", info_icon("Initial Size of the Flock", blurbs$flock_size), value = NULL, min=0, step=1000),
             numericInputIcon("mortality", info_icon("Mortality Rate", blurbs$mortality), value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))),
             numericInputIcon("period_length", info_icon("Period Length for Hens to Lay (Months)"), value = NULL, min=0, max=20, step=1),
-            numericInputIcon("transition_length", info_icon("Delay Between Selling and Buying New Hens  (Months)"), value = NULL, min=0, max=20, step=1),
+            numericInputIcon("transition_length", info_icon("Down Time Between Flocks (Months)"), value = NULL, min=0, max=20, step=1),
             numericInputIcon("new_hens", info_icon("Number of Hens Purchased Each Period"), value = NULL, min=0, step=1000),
             numericInputIcon("breakage", info_icon("Percentage of Eggs that Break"), value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))),
             
@@ -148,7 +148,7 @@ server <- function(input, output, session) {
                         period_rank == 1 ~ as.double(input$new_hens),
                         is_transition ~ 0.0),
                         num_hens = calc_hens(num_hens, survival()),
-                    num_eggs = num_hens * (1 - input$breakage / 100),
+                    num_eggs = num_hens * 30.5 * (1 - input$breakage / 100),
                     revenue_eggs = num_eggs * input$price_egg,
                     revenue_spent = case_when(period_rank == input$period_length + 1 ~ lag(num_hens) * input$price_spent, T ~ 0),
                     revenue_manure = case_when(period_rank == input$period_length + 1 ~ as.double(input$revenue_manure), T ~ 0.0),
