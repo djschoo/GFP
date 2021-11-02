@@ -5,10 +5,12 @@ library(tidyverse)
 library(readxl)
 library(reactable)
 options(scipen = 999)
+options(warn=-1)
 
 `%,%` = function(a,b) paste0(a,b)
 
-calc_hens = function(v, p) {
+calc_hens = function(v, p, i) {
+  if (is.na(p)) return(0)
   t = v[1]
   for (i in 1:length(v)) {
     if (is.na(v[i])) t[i] = t[i-1] * p else t[i] = v[i]
@@ -71,7 +73,7 @@ ui <- fluidPage(
         # Sidebar to demonstrate various slider options
         sidebarPanel(
             sliderInput("num_years", label=info_icon("Number of Years to Forecast", blurbs$num_years), value = 10, min=1, max=50, step=1),
-            pickerInput("country", selected=NULL, info_icon("Your Country", blurbs$country), multiple = F, choices = countries, choicesOpt = list(content = mapply(countries, flags, FUN = function(country, flagUrl) {HTML(paste(tags$img(src=flagUrl, width=20, height=15), country))}, SIMPLIFY = FALSE, USE.NAMES = FALSE))),
+            pickerInput("country", selected="", info_icon("Your Country", blurbs$country), multiple = F, choices = countries, choicesOpt = list(content = mapply(countries, flags, FUN = function(country, flagUrl) {HTML(paste(tags$img(src=flagUrl, width=20, height=15), country))}, SIMPLIFY = FALSE, USE.NAMES = FALSE))),
             
             h3("Basic Statistics"),
             numericInput("flock_size", info_icon("Initial Size of the Flock", blurbs$flock_size), value = NULL, min=0, step=1000),
@@ -127,16 +129,19 @@ ui <- fluidPage(
 
 # Define server logic
 server <- function(input, output, session) {
+  
+  observeEvent(input$country, {
+    defaults = defaults_all %>% filter(country == input$country)
+    for (var in event_vars) updateNumericInput(session, inputId = var, value = filter(defaults, variable==var) %>% pull(value))
+    for (var in currency_vars) updateNumericInputIcon(session, inputId = var, icon = currencies[match(input$country, countries)])
+  })
+    
+  observe(if(input$country != "") {
 
-        defaults = reactive(defaults_all %>% filter(country == input$country))
-        
-        observeEvent(input$country, {for (var in event_vars) updateNumericInput(session, inputId = var, value = NULL)})
-        observeEvent(input$country, {for (var in event_vars) updateNumericInput(session, inputId = var, value = filter(defaults(), variable==var) %>% pull(value))})
-        observeEvent(input$country, {for (var in currency_vars) updateNumericInputIcon(session, inputId = var, icon = currencies[match(input$country, countries)])})
-        
-        survival = reactive({(1 - input$mortality / 100) ^ (1/(input$period_length - 1))})
-        monthly = reactive({
-            tibble(month = 1:(12 * (input$num_years))) %>%
+  survival = reactive({(1 - input$mortality / 100) ^ (1/(input$period_length - 1))})
+  
+  monthly = reactive({
+    tibble(month = 1:(12 * (input$num_years))) %>%
                 mutate(
                     year = ceiling(month / 12),
                     period = ceiling(month / input$period_length),
@@ -147,7 +152,7 @@ server <- function(input, output, session) {
                         month == 1 ~ num_hens,
                         period_rank == 1 ~ as.double(input$new_hens),
                         is_transition ~ 0.0),
-                        num_hens = calc_hens(num_hens, survival()),
+                    num_hens = calc_hens(num_hens, survival()),
                     num_eggs = num_hens * 30.5 * (1 - input$breakage / 100),
                     revenue_eggs = num_eggs * input$price_egg,
                     revenue_spent = case_when(period_rank == input$period_length + 1 ~ lag(num_hens) * input$price_spent, T ~ 0),
@@ -191,6 +196,9 @@ server <- function(input, output, session) {
         output$t_profit = renderReactable(reactable(profit() %>% mutate(across(2:4, scales::comma)), highlight=T))
         output$g_profit = renderPlotly(pl(profit(), ylabel="Total Cost/Revenue/Profit"))
         output$d_profit = downloadHandler(filename = "profit_data.csv", content = function(file) write.csv(profit(), file, row.names = FALSE))
+      
+  })
+
 }
 
 # Run the application
