@@ -15,9 +15,7 @@ options(warn=-1)
 calc_hens = function(v, p, i) {
   if (is.na(p)) return(0)
   t = v[1]
-  for (i in 1:length(v)) {
-    if (is.na(v[i])) t[i] = t[i-1] * p else t[i] = v[i]
-  }
+  for (i in 1:length(v)) if (is.na(v[i])) t[i] = t[i-1] * p else t[i] = v[i]
   return(t)
 }
 
@@ -37,7 +35,7 @@ info_icon = function(text, message="") tags$span(text, tags$i(class = "glyphicon
 
 # IMPORT COUNTRY INFO
 
-countries = read_excel("www/countries.xlsx", sheet="Sheet2")
+countries = read_excel("www/countries.xlsx")
 blurbs = countries %>% select(country, blurb) %>% deframe()
 countries = countries %>% select(-blurb) 
 countries = bind_cols(country = names(countries), t(countries)) %>% as_tibble()
@@ -45,7 +43,7 @@ names(countries) = unlist(countries[1,])
 countries = countries[2:nrow(countries), ] %>% arrange(country)
 countries_all = countries$country %>% unique()
 currencies = select(countries, country, starts_with("currency"))
-flags = c("", sapply(countries$flag_symbol, function(x) "https://cdn.jsdelivr.net/gh/lipis/flag-icon-css@master/flags/4x3/" %,% x %,% ".svg"))
+flags = countries %>% select(country, flag_symbol)
 countries = select(countries, -starts_with(c("flag", "currency"))) %>%
   pivot_longer(cols=-1, names_to = "variable") %>%
   arrange(country, variable) %>%
@@ -65,7 +63,13 @@ ui <- fluidPage(
     
     # Sidebar to demonstrate various slider options
     sidebarPanel(
-      pickerInput("country", selected="", label="Your Country", multiple = F, choices = c("", countries_all), choicesOpt = list(content = mapply(c("", countries_all), flags, FUN = function(country, flagUrl) {HTML(paste(tags$img(src=flagUrl, width=20, height=15), country))}, SIMPLIFY = FALSE, USE.NAMES = FALSE))),
+      pickerInput(
+        inputId="country", 
+        label="Your Country", 
+        multiple = F, 
+        choices = flags$country, 
+        options = list(title = "Pick a country!"),
+        choicesOpt = list(content = purrr::map2(flags$flag_symbol, flags$country, function(flag, text) shiny::HTML(paste(tags$img(src=flag %,% ".svg", width=30, height=22), text))))),
       sliderInput("num_years", label="Number of Years to Forecast",  value = 10, min=1, max=50, step=1),
       
       h3("Basic Statistics"),
