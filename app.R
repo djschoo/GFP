@@ -4,20 +4,12 @@ library(plotly)
 library(tidyverse)
 library(readxl)
 library(reactable)
-library(stringi)
 options(scipen = 999)
 options(warn=-1)
 
 # FUNCTIONS
 
 `%,%` = function(a,b) paste0(a,b)
-
-calc_hens = function(v, p, i) {
-  if (is.na(p)) return(0)
-  t = v[1]
-  for (i in 1:length(v)) if (is.na(v[i])) t[i] = t[i-1] * p else t[i] = v[i]
-  return(t)
-}
 
 info_icon = function(text, message="") tags$span(text, tags$i(class = "glyphicon glyphicon-info-sign", style = "color:#0072B2;", title = message))
 
@@ -65,7 +57,7 @@ ui <- fluidPage(
       numericInputIcon("mortality", info_icon("Mortality rate (%)", blurbs['mortality']), value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))),
       sliderInput("period_length", info_icon("Laying period (months)", blurbs['period_length']), value = 12, min=1, max=20, step=1),
       numericInputIcon("lay_percent", info_icon("Average rate of lay (%)", blurbs['lay_percent']), value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))),
-      sliderInput("transition_length", info_icon("Down Time Between Flocks (Months)", blurbs['transition_length']), value = 2, min=0, max=10, step=1),
+      sliderInput("transition_length", info_icon("Down Time Between Flocks (Months)", blurbs['transition_length']), value = 2, min=1, max=10, step=1),
       numericInputIcon("breakage", info_icon("Eggs lost (%)", blurbs['breakage']), value = NULL, min=0, max=100, step=.5, icon=list(NULL, icon("percent"))),
       
       h3("Revenues"),
@@ -118,29 +110,18 @@ ui <- fluidPage(
 # DEFINE SERVER LOGIC
 server <- function(input, output, session) {
   
+  currency_text = eventReactive(input$country, filter(currencies, country==input$country) %>% pull(currency_text))
+  currency_locale = eventReactive(input$country, filter(currencies, country==input$country) %>% pull(currency_locale))
+  currency_symbol = eventReactive(input$country, filter(currencies, country==input$country) %>% pull(currency_symbol))
   
   observeEvent(input$country, {
-    #unicode = filter(currencies, country == input$country) %>% pull(currency_unicode)
-    #yaxislabel = stri_unescape_unicode(gsub("\\U","\\u", unicode, fixed=TRUE))
-    
-    currency_text = filter(currencies, country == input$country) %>% pull(currency_text)
-    currency_locale = filter(currencies, country == input$country) %>% pull(currency_locale)
-    currency_symbol = reactive(filter(currencies, country == input$country) %>% pull(currency_symbol))
-    
-    
-    defaults = countries %>% filter(country == input$country)
-    for (var in event_vars) updateNumericInput(session, inputId = var, value = filter(defaults, variable==var) %>% pull(value))
-    for (var in currency_vars) {
-      #unicode = filter(currencies, country == input$country) %>% pull(currency_unicode)
-      #updateNumericInputIcon(session, inputId = var, icon = list(stri_unescape_unicode(gsub("\\U","\\u", unicode, fixed=TRUE))))
-      updateNumericInputIcon(session, inputId = var, icon = list(currency_symbol()))
-    }
+    for (var in event_vars) updateNumericInput(session, inputId = var, value = filter(countries, country == input$country, variable==var) %>% pull(value))
+    for (var in currency_vars) updateNumericInputIcon(session, inputId = var, icon = list(currency_symbol()))
   })
   
-  observe(if(input$country != "") {
+  observe({
     
     survival = reactive({(1 - input$mortality / 100) ^ (1/(input$period_length - 1))})
-    
     monthly = reactive({
       tibble(month = 1:(12 * (input$num_years))) %>%
         mutate(
@@ -148,14 +129,16 @@ server <- function(input, output, session) {
           period = ceiling(month / input$period_length),
           period_rank = (month - 1) %% (input$period_length + input$transition_length) + 1,
           is_transition = period_rank > input$period_length,
-          num_hens = case_when(is_transition ~ 0.0, T ~ as.double(input$flock_size)),
-          num_hens = calc_hens(num_hens, survival()),
+          num_hens = case_when(
+            period_rank == 1 ~ as.double(input$flock_size),
+            is_transition ~ 0.0,
+            T ~ input$flock_size * (survival() ^ (period_rank - 1))),
           num_eggs = num_hens * 30.5 * (1 - input$breakage / 100) * input$lay_percent,
           revenue_eggs = num_eggs * input$price_egg,
           revenue_spent = case_when(period_rank == input$period_length + 1 ~ lag(num_hens) * input$price_spent, T ~ 0),
           revenue_manure = case_when(period_rank == input$period_length + 1 ~ as.double(input$revenue_manure), T ~ 0.0),
           cost_feed = case_when(!is_transition ~ as.double(input$cost_feed), T ~ 0.0),
-          cost_labor = input$cost_labor,
+          cost_labor = as.double(input$cost_labor),
           cost_equip = input$cost_equip / 12,
           cost_pullet = case_when(is_transition & !lead(is_transition) ~ as.double(input$cost_pullet * input$flock_size), T ~ 0.0),
           cost_litter = case_when(period_rank == 1 ~ as.double(input$cost_litter), T ~ 0.0),
@@ -184,6 +167,8 @@ server <- function(input, output, session) {
           profit = revenue_total - cost_total
         )})
     
+    print(yearly())
+    
     revenue = reactive(yearly() %>% 
       select(year, num_eggs, revenue_eggs, revenue_spent, revenue_manure, revenue_total) %>% 
       setNames(c("Year", "Number of Eggs", "Revenue from Eggs", "Revenue from Spent Hens", "Revenue from Manure", "Total Revenue")))
@@ -194,8 +179,8 @@ server <- function(input, output, session) {
         highlight=T, 
         columns = list(
           Year = colDef(format = colFormat()),
-          `Number of Eggs` = colDef(format = colFormat(locales = currency_locale))), 
-        defaultColDef = colDef(format = colFormat(currency = currency_text, separators = T, locales=currency_locale))))
+          `Number of Eggs` = colDef(format = colFormat(locales = currency_locale()))), 
+        defaultColDef = colDef(format = colFormat(currency = currency_text(), separators = T, locales=currency_locale()))))
     output$g_revenue = renderPlotly(revenue() %>%
       select(-`Total Revenue`) %>%
       pivot_longer(cols = 2:5) %>%
@@ -204,10 +189,10 @@ server <- function(input, output, session) {
       theme_light() +
       aes(x=`Year`, y=value, color=name) +
       geom_line() + geom_point() +
-      scale_x_continuous(breaks=df$`Year`) +
+      scale_x_continuous(breaks=revenue()$`Year`) +
       scale_y_continuous(labels = scales::comma) +
       facet_wrap(~facet, scales="free_y", ncol=1) + 
-      labs(y=currency_text, color=NULL))
+      labs(y=currency_text(), color=NULL))
     
     output$d_revenue = downloadHandler(filename = "revenue_data.csv", content = function(file) write.csv(revenue(), file, row.names = FALSE))
     
@@ -220,7 +205,7 @@ server <- function(input, output, session) {
         cost(), 
         highlight=T, 
         columns = list(Year = colDef(format = colFormat())), 
-        defaultColDef = colDef(format = colFormat(currency = currency_text, separators = TRUE, locales = currency_locale))))
+        defaultColDef = colDef(format = colFormat(currency = currency_text(), separators = TRUE, locales = currency_locale()))))
     output$g_cost = renderPlotly(cost() %>%
         select(-`Total Cost`) %>%
         pivot_longer(cols = 2:11) %>%
@@ -228,9 +213,9 @@ server <- function(input, output, session) {
         theme_light() +
         aes(x=`Year`, y=value, color=name) +
         geom_line() + geom_point() +
-        scale_x_continuous(breaks=df$`Year`) +
+        scale_x_continuous(breaks=cost()$`Year`) +
         scale_y_continuous(labels = scales::comma) +
-        labs(y=currency_text, color=NULL))
+        labs(y=currency_text(), color=NULL))
     
     output$d_cost = downloadHandler(filename = "cost_data.csv", content = function(file) write.csv(cost(), file, row.names = FALSE))
     
@@ -242,16 +227,16 @@ server <- function(input, output, session) {
         profit(), 
         highlight=T, 
         columns = list(Year = colDef(format = colFormat())), 
-        defaultColDef = colDef(format = colFormat(currency = currency_text, separators = TRUE, locales=currency_locale))))
+        defaultColDef = colDef(format = colFormat(currency = currency_text(), separators = TRUE, locales=currency_locale()))))
     output$g_profit = renderPlotly(profit() %>%
          pivot_longer(cols = 2:4) %>%
          ggplot() +
          theme_light() +
          aes(x=`Year`, y=value, color=name) +
          geom_line() + geom_point() +
-         scale_x_continuous(breaks=df$`Year`) +
+         scale_x_continuous(breaks=profit()$`Year`) +
          scale_y_continuous(labels = scales::comma) +
-         labs(y=currency_text, color=NULL))
+         labs(y=currency_text(), color=NULL))
       
     output$d_profit = downloadHandler(filename = "profit_data.csv", content = function(file) write.csv(profit(), file, row.names = FALSE))
   })
