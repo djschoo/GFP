@@ -167,8 +167,6 @@ server <- function(input, output, session) {
           profit = revenue_total - cost_total
         )})
     
-    print(yearly())
-    
     revenue = reactive(yearly() %>% 
       select(year, num_eggs, revenue_eggs, revenue_spent, revenue_manure, revenue_total) %>% 
       setNames(c("Year", "Number of Eggs", "Revenue from Eggs", "Revenue from Spent Hens", "Revenue from Manure", "Total Revenue")))
