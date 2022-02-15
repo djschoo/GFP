@@ -91,7 +91,8 @@ ui <- fluidPage(
                    reactableOutput("t_monthly")),
           
           tabPanel("Revenues",
-                   plotlyOutput("g_revenue"),
+                   plotlyOutput("g_revenue1", height = 200 ),
+                   plotlyOutput("g_revenue2", height = 300),
                    downloadButton("d_revenue", "Download Data"),
                    reactableOutput("t_revenue")),
           
@@ -179,19 +180,49 @@ server <- function(input, output, session) {
           Year = colDef(format = colFormat()),
           `Number of Eggs` = colDef(format = colFormat(locales = currency_locale()))), 
         defaultColDef = colDef(format = colFormat(currency = currency_text(), separators = T, locales=currency_locale()))))
-    output$g_revenue = renderPlotly(revenue() %>%
-      select(-`Total Revenue`) %>%
-      pivot_longer(cols = 2:5) %>%
-      mutate(facet = case_when(name %in% c("Revenue from Spent Hens", "Revenue from Manure") ~ "Revenue from Spent Hens and Manure", T ~ name)) %>%
+    
+    # output$g_revenue = renderPlotly(revenue() %>%
+    #   select(-`Total Revenue`) %>%
+    #   pivot_longer(cols = 2:5) %>%
+    #   mutate(facet = case_when(name %in% c("Revenue from Spent Hens", "Revenue from Manure") ~ "Revenue from Spent Hens and Manure", T ~ name)) %>%
+    #   ggplot() +
+    #   theme_light() +
+    #   aes(x=`Year`, y=value, color=name) +
+    #   geom_line() + geom_point() +
+    #   scale_x_continuous(breaks=revenue()$`Year`) +
+    #   scale_y_continuous(labels = scales::comma) +
+    #   facet_wrap(~facet, scales="free_y", ncol=1) +
+    #   labs(y=currency_text() %,% "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t" %,% currency_text() %,% "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t" %,% "Eggs", color=NULL))
+
+    output$g_revenue1 = renderPlotly(revenue() %>%
+      select(`Year`, `Number of Eggs`) %>%
+      pivot_longer(cols = 2) %>%
+      mutate(facet = name) %>%
       ggplot() +
       theme_light() +
       aes(x=`Year`, y=value, color=name) +
       geom_line() + geom_point() +
       scale_x_continuous(breaks=revenue()$`Year`) +
       scale_y_continuous(labels = scales::comma) +
-      facet_wrap(~facet, scales="free_y", ncol=1) +
-      labs(y=currency_text() %,% "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t" %,% currency_text() %,% "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t" %,% "Eggs", color=NULL))
+      facet_wrap(~facet) +
+      theme(legend.position = 'none') +
+      labs(color=NULL, y="Number of Eggs"))
     
+    output$g_revenue2 = renderPlotly(revenue() %>%
+       select(`Year`, "Revenue from Spent Hens", "Revenue from Manure") %>%
+       pivot_longer(cols = 2:3) %>%
+       mutate(facet = name) %>%
+       ggplot() +
+       theme_light() +
+       aes(x=`Year`, y=value, color=name) +
+       geom_line() + geom_point() +
+       scale_x_continuous(breaks=revenue()$`Year`) +
+       scale_y_continuous(labels = scales::comma) +
+       facet_wrap(~facet, scales='free_y', ncol=1) +
+       theme(legend.position = 'none') +
+       labs(color=NULL, y=currency_text()))
+       
+      
     output$d_revenue = downloadHandler(filename = "revenue_data.csv", content = function(file) write.csv(revenue(), file, row.names = FALSE))
     
     cost = reactive(yearly() %>% 
@@ -213,6 +244,7 @@ server <- function(input, output, session) {
         geom_line() + geom_point() +
         scale_x_continuous(breaks=cost()$`Year`) +
         scale_y_continuous(labels = scales::comma) +
+        theme(legend.position = 'bottom') +
         labs(y=currency_text(), color=NULL))
     
     output$d_cost = downloadHandler(filename = "cost_data.csv", content = function(file) write.csv(cost(), file, row.names = FALSE))
@@ -234,6 +266,7 @@ server <- function(input, output, session) {
          geom_line() + geom_point() +
          scale_x_continuous(breaks=profit()$`Year`) +
          scale_y_continuous(labels = scales::comma) +
+         theme(legend.position = 'left') +
          labs(y=currency_text(), color=NULL))
       
     output$d_profit = downloadHandler(filename = "profit_data.csv", content = function(file) write.csv(profit(), file, row.names = FALSE))
