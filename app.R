@@ -179,8 +179,8 @@ server <- function(input, output, session) {
         )})
     
     revenue = reactive(yearly() %>% 
-      select(year, num_eggs, revenue_eggs, revenue_spent, revenue_manure, revenue_total) %>% 
-      setNames(c("Year", "Number of Eggs", "Revenue from Eggs", "Revenue from Spent Hens", "Revenue from Manure", "Total Revenue")))
+                         select(year, num_eggs, revenue_eggs, revenue_spent, revenue_manure, revenue_total) %>% 
+                         setNames(c("Year", "Number of Eggs", "Revenue from Eggs", "Revenue from Spent Hens", "Revenue from Manure", "Total Revenue")))
     
     output$t_revenue = renderReactable(
       reactable(
@@ -192,41 +192,41 @@ server <- function(input, output, session) {
         defaultColDef = colDef(format = colFormat(currency = currency_text(), separators = T, locales=currency_locale()))))
     
     revenue_p1 = ggplotly(revenue() %>%
-      select(`Year`, `Number of Eggs`) %>%
-      pivot_longer(cols = 2) %>%
-      mutate(facet = name) %>%
-      ggplot() +
-      theme_light() +
-      aes(x=`Year`, y=value, color=name) +
-      geom_line() + geom_point() +
-      scale_x_continuous(breaks=revenue()$`Year`) +
-      scale_y_continuous(labels = scales::comma) +
-      facet_wrap(~facet) +
-      theme(legend.position = 'none') +
-      labs(color=NULL, y="Number of Eggs", x=NULL))
-  
+                            select(`Year`, `Number of Eggs`) %>%
+                            pivot_longer(cols = 2) %>%
+                            mutate(facet = name) %>%
+                            ggplot() +
+                            theme_light() +
+                            aes(x=`Year`, y=value, color=name) +
+                            geom_line() + geom_point() +
+                            scale_x_continuous(breaks=revenue()$`Year`) +
+                            scale_y_continuous(labels = scales::comma) +
+                            facet_wrap(~facet) +
+                            theme(legend.position = 'none') +
+                            labs(color=NULL, y="Number of Eggs", x=NULL))
+    
     revenue_p2 = ggplotly(revenue() %>%
-      select(`Year`, "Revenue from Eggs", "Revenue from Spent Hens", "Revenue from Manure") %>%
-      pivot_longer(cols = 2:4) %>%
-      mutate(facet = name) %>%
-      ggplot() +
-      theme_light() +
-      aes(x=`Year`, y=value, color=name) +
-      geom_line() + geom_point() +
-      scale_x_continuous(breaks=revenue()$`Year`) +
-      scale_y_continuous(labels = scales::comma) +
-      facet_wrap(~facet, scales='free_y', ncol=1) +
-      theme(legend.position = 'none') +
-      scale_color_manual(values = c("#7CAE00", "#00BFC4", "#C77CFF")) +
-      labs(color=NULL, y=currency_text()))
+                            select(`Year`, "Revenue from Eggs", "Revenue from Spent Hens", "Revenue from Manure") %>%
+                            pivot_longer(cols = 2:4) %>%
+                            mutate(facet = name) %>%
+                            ggplot() +
+                            theme_light() +
+                            aes(x=`Year`, y=value, color=name) +
+                            geom_line() + geom_point() +
+                            scale_x_continuous(breaks=revenue()$`Year`) +
+                            scale_y_continuous(labels = scales::comma) +
+                            facet_wrap(~facet, scales='free_y', ncol=1) +
+                            theme(legend.position = 'none') +
+                            scale_color_manual(values = c("#7CAE00", "#00BFC4", "#C77CFF")) +
+                            labs(color=NULL, y=currency_text()))
     
     output$g_revenue = renderCombineWidgets(manipulateWidget::combineWidgets(revenue_p1, revenue_p2, nrow = 2, rowsize = c(1,2), byrow = T))
     
     output$d_revenue = downloadHandler(filename = "revenue_data.csv", content = function(file) write.csv(revenue(), file, row.names = FALSE))
     
     cost = reactive(yearly() %>% 
-        select(year, cost_feed, cost_labor, cost_equip, cost_pullet, cost_litter, cost_vet, cost_utilities, cost_other, fixed_land, fixed_other) %>%
-        setNames(c("Year", "Feed", "Labor", "Equipment", "Pullet", "Litter", "Veterinarian/Vaccine", "Utilities", "Other", "Land", "Other Fixed")))
+                      select(year, cost_feed, cost_labor, cost_equip, cost_pullet, cost_litter, cost_vet, cost_utilities, cost_other, fixed_land, fixed_other) %>%
+                      setNames(c("Year", "Feed", "Labor", "Equipment", "Pullet", "Litter", "Veterinarian/Vaccine", "Utilities", "Other", "Land", "Other Fixed")))
     
     output$t_cost = renderReactable(
       reactable(
@@ -236,24 +236,24 @@ server <- function(input, output, session) {
         defaultColDef = colDef(format = colFormat(currency = currency_text(), separators = TRUE, locales = currency_locale()))))
     
     output$g_cost = renderPlotly(cost() %>%
-        pivot_longer(cols = 2:11) %>%
-        mutate(name = factor(name, levels = c("Year", "Feed", "Labor", "Equipment", "Pullet", "Litter", "Veterinarian/Vaccine", "Utilities", "Other", "Land", "Other Fixed"))) %>%
-        mutate(facet = "Cost") %>%
-        ggplot() +
-        theme_light() +
-        aes(x=`Year`, y=value, color=name) +
-        geom_line() + geom_point() +
-        scale_x_continuous(breaks=cost()$`Year`) +
-        scale_y_continuous(labels = scales::comma) +
-        theme(legend.position = 'bottom') +
-        labs(y=currency_text(), color=NULL) +
-        facet_wrap(~facet))
+                                   pivot_longer(cols = 2:11) %>%
+                                   mutate(name = factor(name, levels = c("Year", "Feed", "Labor", "Equipment", "Pullet", "Litter", "Veterinarian/Vaccine", "Utilities", "Other", "Land", "Other Fixed"))) %>%
+                                   mutate(facet = "Cost") %>%
+                                   ggplot() +
+                                   theme_light() +
+                                   aes(x=`Year`, y=value, color=name) +
+                                   geom_line() + geom_point() +
+                                   scale_x_continuous(breaks=cost()$`Year`) +
+                                   scale_y_continuous(labels = scales::comma) +
+                                   theme(legend.position = 'bottom') +
+                                   labs(y=currency_text(), color=NULL) +
+                                   facet_wrap(~facet))
     
     output$d_cost = downloadHandler(filename = "cost_data.csv", content = function(file) write.csv(cost(), file, row.names = FALSE))
     
     profit = reactive(yearly() %>% 
-      select(year, cost_total, revenue_total, profit) %>% 
-      setNames(c("Year", "Total Cost", "Total Revenue", "Total Profit")))
+                        select(year, cost_total, revenue_total, profit) %>% 
+                        setNames(c("Year", "Total Cost", "Total Revenue", "Total Profit")))
     output$t_profit = renderReactable(
       reactable(
         profit(), 
@@ -261,18 +261,18 @@ server <- function(input, output, session) {
         columns = list(Year = colDef(format = colFormat())), 
         defaultColDef = colDef(format = colFormat(currency = currency_text(), separators = TRUE, locales=currency_locale()))))
     output$g_profit = renderPlotly(profit() %>%
-         pivot_longer(cols = 2:4) %>%
-         mutate(facet = "Profit") %>%
-         ggplot() +
-         theme_light() +
-         aes(x=`Year`, y=value, color=name) +
-         geom_line() + geom_point() +
-         scale_x_continuous(breaks=profit()$`Year`) +
-         scale_y_continuous(labels = scales::comma) +
-         theme(legend.position = 'left') +
-         labs(y=currency_text(), color=NULL) +
-         facet_wrap(~facet))
-      
+                                     pivot_longer(cols = 2:4) %>%
+                                     mutate(facet = "Profit") %>%
+                                     ggplot() +
+                                     theme_light() +
+                                     aes(x=`Year`, y=value, color=name) +
+                                     geom_line() + geom_point() +
+                                     scale_x_continuous(breaks=profit()$`Year`) +
+                                     scale_y_continuous(labels = scales::comma) +
+                                     theme(legend.position = 'left') +
+                                     labs(y=currency_text(), color=NULL) +
+                                     facet_wrap(~facet))
+    
     output$d_profit = downloadHandler(filename = "profit_data.csv", content = function(file) write.csv(profit(), file, row.names = FALSE))
   })
 }
