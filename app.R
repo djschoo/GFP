@@ -11,6 +11,7 @@ options(warn=-1)
 # FUNCTIONS
 
 `%,%` = function(a,b) paste0(a,b)
+`%,,%` = function(a,b) paste(a,b)
 
 info_icon = function(text, message="") tags$span(text, tags$i(class = "glyphicon glyphicon-info-sign", style = "color:#0072B2;", title = message))
 
@@ -88,17 +89,8 @@ ui <- fluidPage(
         condition = "input.country != ''",
         tabsetPanel(
           
-          # this panel is no longer needed for the final product
-          # tabPanel("Monthly Table",
-          #          p("Note: we will delete this table in the final product"),
-          #          downloadButton("d_monthly", "Download Data"),
-          #          reactableOutput("t_monthly")),
-          
           tabPanel("Revenues",
-                   #plotlyOutput("g_revenue"),
                    combineWidgetsOutput("g_revenue", height=600),
-                   #plotlyOutput("g_revenue", height = 200 ),
-                   #plotlyOutput("g_revenue2", height = 300),
                    downloadButton("d_revenue", "Download Data"),
                    reactableOutput("t_revenue")),
           
@@ -178,18 +170,23 @@ server <- function(input, output, session) {
           profit = revenue_total - cost_total
         )})
     
-    revenue = reactive(yearly() %>% 
-                         select(year, num_eggs, revenue_eggs, revenue_spent, revenue_manure, revenue_total) %>% 
-                         setNames(c("Year", "Number of Eggs", "Revenue from Eggs", "Revenue from Spent Hens", "Revenue from Manure", "Total Revenue")))
+    revenue = reactive(
+      yearly() %>% 
+        select(year, num_eggs, revenue_eggs, revenue_spent, revenue_manure, revenue_total) %>% 
+        mutate_at(c("num_eggs", "revenue_eggs", "revenue_spent", "revenue_manure", "revenue_total"), ~round(., 0)) %>%
+        setNames(c("Year", "Number of Eggs", "Revenue from Eggs", "Revenue from Spent Hens", "Revenue from Manure", "Total Revenue")))
     
     output$t_revenue = renderReactable(
       reactable(
         revenue(), 
         highlight=T, 
         columns = list(
-          Year = colDef(format = colFormat()),
-          `Number of Eggs` = colDef(format = colFormat(locales = currency_locale()))), 
-        defaultColDef = colDef(format = colFormat(currency = currency_text(), separators = T, locales=currency_locale()))))
+          #Year = colDef(format = colFormat()),
+          #`Number of Eggs` = colDef(format = colFormat(locales = currency_locale()))), 
+          Year = colDef(cell = function(x) x),
+          `Number of Eggs` = colDef(cell = function(x) format(x, big.mark=",", decimal.mark="."))),
+        defaultColDef = colDef(cell = function(x) currency_symbol() %,% format(round(x, 0), big.mark=",", decimal.mark="."))))
+        # defaultColDef = colDef(format = colFormat(currency = currency_text(), separators = T, locales=currency_locale()))))
     
     revenue_p1 = ggplotly(revenue() %>%
                             select(`Year`, `Number of Eggs`) %>%
@@ -200,10 +197,10 @@ server <- function(input, output, session) {
                             aes(x=`Year`, y=value, color=name) +
                             geom_line() + geom_point() +
                             scale_x_continuous(breaks=revenue()$`Year`) +
-                            scale_y_continuous(labels = scales::comma) +
+                            scale_y_continuous(labels = ~scales::comma(., accuracy=1)) +
                             facet_wrap(~facet) +
                             theme(legend.position = 'none') +
-                            labs(color=NULL, y="Number of Eggs", x=NULL))
+                            labs(color=NULL, y=NULL, x=NULL))
     
     revenue_p2 = ggplotly(revenue() %>%
                             select(`Year`, "Revenue from Eggs", "Revenue from Spent Hens", "Revenue from Manure") %>%
@@ -214,26 +211,32 @@ server <- function(input, output, session) {
                             aes(x=`Year`, y=value, color=name) +
                             geom_line() + geom_point() +
                             scale_x_continuous(breaks=revenue()$`Year`) +
-                            scale_y_continuous(labels = scales::comma) +
+                            scale_y_continuous(labels = ~scales::comma(., accuracy=1)) +
                             facet_wrap(~facet, scales='free_y', ncol=1) +
                             theme(legend.position = 'none') +
                             scale_color_manual(values = c("#7CAE00", "#00BFC4", "#C77CFF")) +
-                            labs(color=NULL, y=currency_text()))
+                            labs(color=NULL, y=currency_symbol()))
     
     output$g_revenue = renderCombineWidgets(manipulateWidget::combineWidgets(revenue_p1, revenue_p2, nrow = 2, rowsize = c(1,2), byrow = T))
     
     output$d_revenue = downloadHandler(filename = "revenue_data.csv", content = function(file) write.csv(revenue(), file, row.names = FALSE))
     
-    cost = reactive(yearly() %>% 
-                      select(year, cost_feed, cost_labor, cost_equip, cost_pullet, cost_litter, cost_vet, cost_utilities, cost_other, fixed_land, fixed_other) %>%
-                      setNames(c("Year", "Feed", "Labor", "Equipment", "Pullet", "Litter", "Veterinarian/Vaccine", "Utilities", "Other", "Land", "Other Fixed")))
+    cost = reactive(
+      yearly() %>% 
+        select(year, cost_feed, cost_labor, cost_equip, cost_pullet, cost_litter, cost_vet, cost_utilities, cost_other, fixed_land, fixed_other) %>%
+        mutate_at(c("cost_feed", "cost_labor", "cost_equip", "cost_pullet", "cost_litter", "cost_vet", "cost_utilities", "cost_other", "fixed_land", "fixed_other"), ~round(., 0)) %>%
+        setNames(c("Year", "Feed", "Labor", "Equipment", "Pullet", "Litter", "Veterinarian/Vaccine", "Utilities", "Other", "Land", "Other Fixed")))
     
     output$t_cost = renderReactable(
       reactable(
         cost(), 
         highlight=T, 
-        columns = list(Year = colDef(format = colFormat())), 
-        defaultColDef = colDef(format = colFormat(currency = currency_text(), separators = TRUE, locales = currency_locale()))))
+        columns = list(
+          #Year = colDef(format = colFormat())
+          Year = colDef(cell = function(x) x)
+        ), 
+        defaultColDef = colDef(cell = function(x) currency_symbol() %,% format(round(x, 0), big.mark=",", decimal.mark="."))))
+        #defaultColDef = colDef(format = colFormat(currency = currency_text(), separators = TRUE, locales = currency_locale()))))
     
     output$g_cost = renderPlotly(cost() %>%
                                    pivot_longer(cols = 2:11) %>%
@@ -244,22 +247,31 @@ server <- function(input, output, session) {
                                    aes(x=`Year`, y=value, color=name) +
                                    geom_line() + geom_point() +
                                    scale_x_continuous(breaks=cost()$`Year`) +
-                                   scale_y_continuous(labels = scales::comma) +
+                                   #scale_y_continuous(labels = scales::comma) +
+                                   scale_y_continuous(labels = ~scales::comma(., accuracy=1)) +
                                    theme(legend.position = 'bottom') +
-                                   labs(y=currency_text(), color=NULL) +
+                                   labs(y=currency_symbol(), color=NULL) +
                                    facet_wrap(~facet))
     
     output$d_cost = downloadHandler(filename = "cost_data.csv", content = function(file) write.csv(cost(), file, row.names = FALSE))
     
-    profit = reactive(yearly() %>% 
-                        select(year, cost_total, revenue_total, profit) %>% 
-                        setNames(c("Year", "Total Cost", "Total Revenue", "Total Profit")))
+    profit = reactive(
+      yearly() %>% 
+        select(year, cost_total, revenue_total, profit) %>% 
+        mutate_at(c("cost_total", "revenue_total", "profit"), ~round(., 0)) %>%
+        setNames(c("Year", "Total Cost", "Total Revenue", "Total Profit")))
+    
     output$t_profit = renderReactable(
       reactable(
         profit(), 
         highlight=T, 
-        columns = list(Year = colDef(format = colFormat())), 
-        defaultColDef = colDef(format = colFormat(currency = currency_text(), separators = TRUE, locales=currency_locale()))))
+        columns = list(
+          #Year = colDef(format = colFormat())
+          Year = colDef(cell = function(x) x)
+        ), 
+        defaultColDef = colDef(cell = function(x) currency_symbol() %,% format(round(x, 0), big.mark=",", decimal.mark="."))))
+        #defaultColDef = colDef(format = colFormat(currency = currency_text(), separators = TRUE, locales=currency_locale()))))
+    
     output$g_profit = renderPlotly(profit() %>%
                                      pivot_longer(cols = 2:4) %>%
                                      mutate(facet = "Profit") %>%
@@ -268,9 +280,10 @@ server <- function(input, output, session) {
                                      aes(x=`Year`, y=value, color=name) +
                                      geom_line() + geom_point() +
                                      scale_x_continuous(breaks=profit()$`Year`) +
-                                     scale_y_continuous(labels = scales::comma) +
+                                     #scale_y_continuous(labels = scales::comma) +
+                                     scale_y_continuous(labels = ~scales::comma(., accuracy=1)) +
                                      theme(legend.position = 'left') +
-                                     labs(y=currency_text(), color=NULL) +
+                                     labs(y=currency_symbol(), color=NULL) +
                                      facet_wrap(~facet))
     
     output$d_profit = downloadHandler(filename = "profit_data.csv", content = function(file) write.csv(profit(), file, row.names = FALSE))
