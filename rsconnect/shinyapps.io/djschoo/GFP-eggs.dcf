@@ -5,10 +5,10 @@ account: djschoo
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 4807833
-bundleId: 5711467
+bundleId: 5719949
 url: https://djschoo.shinyapps.io/GFP-eggs/
-when: 1647919118.5054
-lastSyncTime: 1647919118.5054
+when: 1648078360.31195
+lastSyncTime: 1648078360.31195
 asMultiple: FALSE
 asStatic: FALSE
 ignoredFiles: docs/Cage-free egg calculator_29Sep2021.xlsx|docs/Details and data for Tim KH_HL.xlsx|docs/Economic Cost of Transitioning from Battery Cages - formatted. Pegasus. Oct 2020.pdf|docs/sample revenue calculations.xlsx
