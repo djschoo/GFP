@@ -15,6 +15,10 @@ options(warn=-1)
 
 info_icon = function(text, message="") tags$span(text, tags$i(class = "glyphicon glyphicon-info-sign", style = "color:#0072B2;", title = message))
 
+currency_fns = tibble(currency_fn = c(
+  function(x, y) y %,% scales::number(x, big.mark=",", decimal.mark="."),
+  function(x, y) scales::number(x, big.mark=".", decimal.mark=",") %,% y))
+
 # IMPORT COUNTRY INFO
 
 countries = read_excel("www/countries.xlsx")
@@ -45,6 +49,7 @@ ui <- fluidPage(
     
     # Sidebar to demonstrate various slider options
     sidebarPanel(
+      actionButton("random", "randomize"),
       pickerInput(
         inputId="country", 
         label="Your Country", 
@@ -109,12 +114,17 @@ ui <- fluidPage(
 # DEFINE SERVER LOGIC
 server <- function(input, output, session) {
   
+  observeEvent(input$random, {
+    updatePickerInput(session, "country", selected = sample(countries$country, 1))
+    for (var in event_vars) updateNumericInput(session, inputId = var, value = 10)
+  })
+  
   currency_text = eventReactive(input$country, filter(currencies, country==input$country) %>% pull(currency_text))
   currency_locale = eventReactive(input$country, filter(currencies, country==input$country) %>% pull(currency_locale))
   currency_symbol = eventReactive(input$country, filter(currencies, country==input$country) %>% pull(currency_symbol))
   
   observeEvent(input$country, {
-    for (var in event_vars) updateNumericInput(session, inputId = var, value = filter(countries, country == input$country, variable==var) %>% pull(value))
+    #for (var in event_vars) updateNumericInput(session, inputId = var, value = filter(countries, country == input$country, variable==var) %>% pull(value))
     for (var in currency_vars) updateNumericInputIcon(session, inputId = var, icon = list(currency_symbol()))
   })
   
@@ -182,11 +192,12 @@ server <- function(input, output, session) {
         highlight=T, 
         columns = list(
           #Year = colDef(format = colFormat()),
-          #`Number of Eggs` = colDef(format = colFormat(locales = currency_locale()))), 
-          Year = colDef(cell = function(x) x),
-          `Number of Eggs` = colDef(cell = function(x) format(x, big.mark=",", decimal.mark="."))),
-        defaultColDef = colDef(cell = function(x) currency_symbol() %,% format(round(x, 0), big.mark=",", decimal.mark="."))))
-        # defaultColDef = colDef(format = colFormat(currency = currency_text(), separators = T, locales=currency_locale()))))
+          `Number of Eggs` = colDef(format = colFormat(locales = currency_locale())), 
+          Year = colDef(cell = function(x) x)),
+          #`Number of Eggs` = colDef(cell = function(x) format(x, big.mark=",", decimal.mark="."))),
+        defaultColDef = colDef(cell = currency_fns[[1,1]][[1]](x, y=currency_symbol()))))
+        #defaultColDef = colDef(cell = function(x) currency_symbol() %,% format(round(x, 0), big.mark=",", decimal.mark="."))))
+        #defaultColDef = colDef(format = colFormat(currency = currency_text(), separators = T, locales=currency_locale()))))
     
     revenue_p1 = ggplotly(revenue() %>%
                             select(`Year`, `Number of Eggs`) %>%
@@ -255,7 +266,7 @@ server <- function(input, output, session) {
     
     output$d_cost = downloadHandler(filename = "cost_data.csv", content = function(file) write.csv(cost(), file, row.names = FALSE))
     
-    profit = reactive(
+    profit = reactive( 
       yearly() %>% 
         select(year, cost_total, revenue_total, profit) %>% 
         mutate_at(c("cost_total", "revenue_total", "profit"), ~round(., 0)) %>%
