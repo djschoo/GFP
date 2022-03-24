@@ -110,21 +110,21 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   
   currency_format = eventReactive(input$country,
-    if (input$country == "") list(prefix="$", suffix="", big.mark=",", decimal.mark=".") else
-    filter(currencies, country==input$country) %>% 
-      select(-country) %>% 
-      mutate(prefix = case_when(is.na(suffix) ~ currency_symbol, T ~ "")) %>%
-      mutate(suffix = case_when(!is.na(suffix) ~ currency_symbol, T ~ "")) %>%
-      mutate(big.mark = case_when(is.na(reverse_marks) ~ ",", T ~ ".")) %>%
-      mutate(decimal.mark = case_when(is.na(reverse_marks) ~ ".", T ~ ",")) %>%
-      mutate(accuracy = 1) %>%
-      select(accuracy, prefix, suffix, big.mark, decimal.mark) %>%
-    as.list())
+                                  if (input$country == "") list(prefix="$", suffix="", big.mark=",", decimal.mark=".") else
+                                    filter(currencies, country==input$country) %>% 
+                                    select(-country) %>% 
+                                    mutate(prefix = case_when(is.na(suffix) ~ currency_symbol, T ~ "")) %>%
+                                    mutate(suffix = case_when(!is.na(suffix) ~ currency_symbol, T ~ "")) %>%
+                                    mutate(big.mark = case_when(is.na(reverse_marks) ~ ",", T ~ ".")) %>%
+                                    mutate(decimal.mark = case_when(is.na(reverse_marks) ~ ".", T ~ ",")) %>%
+                                    mutate(accuracy = 1) %>%
+                                    select(accuracy, prefix, suffix, big.mark, decimal.mark) %>%
+                                    as.list())
   
   currency_symbol = eventReactive(input$country,
-    if (input$country == "") "$" else
-    filter(currencies, country==input$country) %>% 
-      pull(currency_symbol))
+                                  if (input$country == "") "$" else
+                                    filter(currencies, country==input$country) %>% 
+                                    pull(currency_symbol))
   
   observeEvent(input$country, {
     for (var in event_vars) updateNumericInput(session, inputId = var, value = filter(countries, country == input$country, variable==var) %>% pull(value))
@@ -196,35 +196,35 @@ server <- function(input, output, session) {
           Year = colDef(cell = function(x) x),
           `Number of Eggs` = colDef(cell = function(y) do.call(scales::number, c(list(x=y), currency_format()[c("big.mark", "decimal.mark")])))),
         defaultColDef = colDef(cell = function(y) do.call(scales::number, c(list(x=y), currency_format())))))
-
+    
     revenue_p1 = ggplotly(revenue() %>%
-      select(`Year`, `Number of Eggs`) %>%
-      pivot_longer(cols = 2) %>%
-      mutate(facet = name) %>%
-      ggplot() +
-      theme_light() +
-      aes(x=`Year`, y=value, color=name) +
-      geom_line() + geom_point() +
-      scale_x_continuous(breaks=revenue()$`Year`) +
-      scale_y_continuous(labels = function(y) do.call(scales::number, c(list(x=y), currency_format()[c("accuracy", "big.mark", "decimal.mark")]))) +
-      facet_wrap(~facet) +
-      theme(legend.position = 'none') +
-      labs(color=NULL, x=NULL, y=NULL))
+                            select(`Year`, `Number of Eggs`) %>%
+                            pivot_longer(cols = 2) %>%
+                            mutate(facet = name) %>%
+                            ggplot() +
+                            theme_light() +
+                            aes(x=`Year`, y=value, color=name) +
+                            geom_line() + geom_point() +
+                            scale_x_continuous(breaks=revenue()$`Year`) +
+                            scale_y_continuous(labels = function(y) do.call(scales::number, c(list(x=y), currency_format()[c("accuracy", "big.mark", "decimal.mark")]))) +
+                            facet_wrap(~facet) +
+                            theme(legend.position = 'none') +
+                            labs(color=NULL, x=NULL, y=NULL))
     
     revenue_p2 = ggplotly(revenue() %>%
-      select(`Year`, "Revenue from Eggs", "Revenue from Spent Hens", "Revenue from Manure") %>%
-      pivot_longer(cols = 2:4) %>%
-      mutate(facet = name) %>%
-      ggplot() +
-      theme_light() +
-      aes(x=`Year`, y=value, color=name) +
-      geom_line() + geom_point() +
-      scale_x_continuous(breaks=revenue()$`Year`) +
-      scale_y_continuous(labels = function(y) do.call(scales::number, c(list(x=y), currency_format()))) +
-      facet_wrap(~facet, scales='free_y', ncol=1) +
-      theme(legend.position = 'none') +
-      scale_color_manual(values = c("#7CAE00", "#00BFC4", "#C77CFF")) +
-      labs(color=NULL, y=NULL))
+                            select(`Year`, "Revenue from Eggs", "Revenue from Spent Hens", "Revenue from Manure") %>%
+                            pivot_longer(cols = 2:4) %>%
+                            mutate(facet = name) %>%
+                            ggplot() +
+                            theme_light() +
+                            aes(x=`Year`, y=value, color=name) +
+                            geom_line() + geom_point() +
+                            scale_x_continuous(breaks=revenue()$`Year`) +
+                            scale_y_continuous(labels = function(y) do.call(scales::number, c(list(x=y), currency_format()))) +
+                            facet_wrap(~facet, scales='free_y', ncol=1) +
+                            theme(legend.position = 'none') +
+                            scale_color_manual(values = c("#7CAE00", "#00BFC4", "#C77CFF")) +
+                            labs(color=NULL, y=NULL))
     
     output$g_revenue = renderCombineWidgets(manipulateWidget::combineWidgets(revenue_p1, revenue_p2, nrow = 2, rowsize = c(1,2), byrow = T))
     
@@ -246,18 +246,18 @@ server <- function(input, output, session) {
         defaultColDef = colDef(cell = function(y) do.call(scales::number, c(list(x=y), currency_format())))))
     
     output$g_cost = renderPlotly(cost() %>%
-      pivot_longer(cols = 2:11) %>%
-      mutate(name = factor(name, levels = c("Year", "Feed", "Labor", "Equipment", "Pullet", "Litter", "Veterinarian/Vaccine", "Utilities", "Other", "Land", "Other Fixed"))) %>%
-      mutate(facet = "Cost") %>%
-      ggplot() +
-      theme_light() +
-      aes(x=`Year`, y=value, color=name) +
-      geom_line() + geom_point() +
-      scale_x_continuous(breaks=cost()$`Year`) +
-        scale_y_continuous(labels = function(y) do.call(scales::number, c(list(x=y), currency_format()))) +
-      theme(legend.position = 'bottom') +
-      labs(color=NULL, y=NULL) +
-      facet_wrap(~facet))
+                                   pivot_longer(cols = 2:11) %>%
+                                   mutate(name = factor(name, levels = c("Year", "Feed", "Labor", "Equipment", "Pullet", "Litter", "Veterinarian/Vaccine", "Utilities", "Other", "Land", "Other Fixed"))) %>%
+                                   mutate(facet = "Cost") %>%
+                                   ggplot() +
+                                   theme_light() +
+                                   aes(x=`Year`, y=value, color=name) +
+                                   geom_line() + geom_point() +
+                                   scale_x_continuous(breaks=cost()$`Year`) +
+                                   scale_y_continuous(labels = function(y) do.call(scales::number, c(list(x=y), currency_format()))) +
+                                   theme(legend.position = 'bottom') +
+                                   labs(color=NULL, y=NULL) +
+                                   facet_wrap(~facet))
     
     output$d_cost = downloadHandler(filename = "cost_data.csv", content = function(file) write.csv(cost(), file, row.names = FALSE))
     
@@ -275,20 +275,20 @@ server <- function(input, output, session) {
           Year = colDef(cell = function(x) x)
         ), 
         defaultColDef = colDef(cell = function(y) do.call(scales::number, c(list(x=y), currency_format())))))
-       
+    
     output$g_profit = renderPlotly(
       profit() %>%
-       pivot_longer(cols = 2:4) %>%
-       mutate(facet = "Profit") %>%
-       ggplot() +
-       theme_light() +
-       aes(x=`Year`, y=value, color=name) +
-       geom_line() + geom_point() +
-       scale_x_continuous(breaks=profit()$`Year`) +
-       scale_y_continuous(labels = function(y) do.call(scales::number, c(list(x=y), currency_format()))) +
-       theme(legend.position = 'left') +
-       labs(color=NULL, y=NULL) +
-       facet_wrap(~facet))
+        pivot_longer(cols = 2:4) %>%
+        mutate(facet = "Profit") %>%
+        ggplot() +
+        theme_light() +
+        aes(x=`Year`, y=value, color=name) +
+        geom_line() + geom_point() +
+        scale_x_continuous(breaks=profit()$`Year`) +
+        scale_y_continuous(labels = function(y) do.call(scales::number, c(list(x=y), currency_format()))) +
+        theme(legend.position = 'left') +
+        labs(color=NULL, y=NULL) +
+        facet_wrap(~facet))
     
     output$d_profit = downloadHandler(filename = "profit_data.csv", content = function(file) write.csv(profit(), file, row.names = FALSE))
   })
