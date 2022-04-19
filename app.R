@@ -38,7 +38,7 @@ currency_vars = event_vars[grep("^(cost)|(revenue)|(price)|(fixed)", event_vars)
 ui <- fluidPage(
   
   # App title
-  titlePanel("Egg Calculator"),
+  titlePanel("Cage-free Egg Business Calculator"),
   
   # Sidebar layout with input and output definitions
   sidebarLayout(
