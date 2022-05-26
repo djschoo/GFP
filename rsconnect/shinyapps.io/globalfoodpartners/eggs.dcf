@@ -1,0 +1,13 @@
+name: eggs
+title: eggs
+username:
+account: globalfoodpartners
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 6118278
+bundleId: 5949246
+url: https://globalfoodpartners.shinyapps.io/eggs/
+when: 1653607019.44846
+lastSyncTime: 1653607019.44846
+asMultiple: FALSE
+asStatic: FALSE

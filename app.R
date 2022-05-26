@@ -98,8 +98,8 @@ ui <- fluidPage(
         tabsetPanel(
           
           tabPanel("Revenues",
-                   #combineWidgetsOutput("g_revenue", height=600),
-                   plotlyOutput("g_revenue"),
+                   combineWidgetsOutput("g_revenue", height=600),
+                   #plotlyOutput("g_revenue"),
                    downloadButton("d_revenue", "Download Data"),
                    reactableOutput("t_revenue")),
           
@@ -218,7 +218,7 @@ server <- function(input, output, session) {
                             scale_y_continuous(labels = function(y) do.call(scales::number, c(list(x=y), currency_format()[c("accuracy", "big.mark", "decimal.mark")]))) +
                             facet_wrap(~facet) +
                             theme(legend.position = 'none') +
-                            #theme(text=element_text(family="Raleway")) +
+                            theme(text=element_text(family="Raleway")) +
                             labs(color=NULL, x=NULL, y=NULL))
     
     revenue_p2 = ggplotly(revenue() %>%
@@ -233,26 +233,27 @@ server <- function(input, output, session) {
                             scale_y_continuous(labels = function(y) do.call(scales::number, c(list(x=y), currency_format()))) +
                             facet_wrap(~facet, scales='free_y', ncol=1) +
                             theme(legend.position = 'none') +
-                            #theme(text=element_text(family="Raleway")) +
+                            theme(text=element_text(family="Raleway")) +
                             scale_color_manual(values = c("#7CAE00", "#00BFC4", "#C77CFF")) +
                             labs(color=NULL, y=NULL))
     
-    output$g_revenue = renderPlotly(revenue() %>%
-                                      select(`Year`, "Revenue from Eggs", "Revenue from Spent Hens", "Revenue from Manure") %>%
-                                      pivot_longer(cols = 2:4) %>%
-                                      mutate(facet = name) %>%
-                                      ggplot() +
-                                      theme_light() +
-                                      aes(x=`Year`, y=value, color=name) +
-                                      geom_line() + geom_point() +
-                                      scale_x_continuous(breaks=revenue()$`Year`) +
-                                      scale_y_continuous(labels = function(y) do.call(scales::number, c(list(x=y), currency_format()))) +
-                                      facet_wrap(~facet, scales='free_y', ncol=1) +
-                                      theme(legend.position = 'none') +
-                                      theme(text=element_text(family="Raleway")) +
-                                      scale_color_manual(values = c("#7CAE00", "#00BFC4", "#C77CFF")) +
-                                      labs(color=NULL, y=NULL))
-    #output$g_revenue = renderCombineWidgets(manipulateWidget::combineWidgets(revenue_p1, revenue_p2, nrow = 2, rowsize = c(1,2), byrow = T))
+    # output$g_revenue = renderPlotly(revenue() %>%
+    #                                   select(`Year`, "Revenue from Eggs", "Revenue from Spent Hens", "Revenue from Manure") %>%
+    #                                   pivot_longer(cols = 2:4) %>%
+    #                                   mutate(facet = name) %>%
+    #                                   ggplot() +
+    #                                   theme_light() +
+    #                                   aes(x=`Year`, y=value, color=name) +
+    #                                   geom_line() + geom_point() +
+    #                                   scale_x_continuous(breaks=revenue()$`Year`) +
+    #                                   scale_y_continuous(labels = function(y) do.call(scales::number, c(list(x=y), currency_format()))) +
+    #                                   facet_wrap(~facet, scales='free_y', ncol=1) +
+    #                                   theme(legend.position = 'none') +
+    #                                   theme(text=element_text(family="Raleway")) +
+    #                                   scale_color_manual(values = c("#7CAE00", "#00BFC4", "#C77CFF")) +
+    #                                   labs(color=NULL, y=NULL))
+    
+    output$g_revenue = renderCombineWidgets(manipulateWidget::combineWidgets(revenue_p1, revenue_p2, nrow = 2, rowsize = c(1,2), byrow = T))
     
     output$d_revenue = downloadHandler(filename = "revenue_data.csv", content = function(file) write.csv(revenue(), file, row.names = FALSE))
     
